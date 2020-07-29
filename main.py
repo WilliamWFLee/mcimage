@@ -123,8 +123,8 @@ def process_image(im: Image.Image) -> str:
                 block_id, height_diff = block_cache[pixel_color]
             else:
                 block_id, height_diff = get_block(pixel_color)
-                block = (block_id, blocks[z][x][1] + height_diff)
                 block_cache[pixel_color] = (block_id, height_diff)
+            block = (block_id, blocks[z][x][1] + height_diff)
             row += [block]
         blocks += [row]
     print()
