@@ -130,3 +130,14 @@ dmypy.json
 
 # VS Code
 .vscode/
+
+# Images
+*.png
+*.PNG
+*.jpg
+*.JPG
+*.jpeg
+*.JPEG
+
+# Output datapacks
+datapacks/
