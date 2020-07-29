@@ -65,7 +65,8 @@ COLORS = {
     "black_terracotta": ((26, 15, 11), (31, 18, 13), (37, 22, 16)),
 }
 
-IMAGE_SIZE = 100
+IMAGE_SIZE = 128
+MAP_OFFSET = 64
 
 Color = Sequence[int]
 
@@ -141,10 +142,16 @@ def process_image(im: Image.Image) -> str:
     for z in range(-1, IMAGE_SIZE):
         for x in range(IMAGE_SIZE):
             block_id, y = blocks[z + 1][x]
-            block_commands += f"setblock {x} {y} {z} {MC_NAMESPACE_ID}:{block_id}\n"
+            block_commands += (
+                f"setblock {x - MAP_OFFSET} {y} {z - MAP_OFFSET} "
+                f"{MC_NAMESPACE_ID}:{block_id}\n"
+            )
 
     air_fill_commands = "\n".join(
-        f"fill 0 {y} -1 {IMAGE_SIZE - 1} {y} {IMAGE_SIZE - 1} minecraft:air"
+        (
+            f"fill {-MAP_OFFSET} {y} {-MAP_OFFSET-1} {IMAGE_SIZE - MAP_OFFSET - 1} "
+            f"{y} {IMAGE_SIZE - MAP_OFFSET - 1} minecraft:air"
+        )
         for y in range(256)
     )
     text = f"{air_fill_commands}\n{block_commands}"
