@@ -2,8 +2,11 @@
 # -*- coding: utf-8 -*-
 
 import argparse
+import json
+import os
 from typing import Sequence, Tuple
 
+import numpy as np
 from PIL import Image, UnidentifiedImageError
 
 MC_NAMESPACE_ID = "minecraft"
@@ -62,6 +65,8 @@ COLORS = {
     "black_terracotta": ((26, 15, 11), (31, 18, 13), (37, 22, 16)),
 }
 
+IMAGE_SIZE = (128, 128)
+
 Color = Sequence[int]
 
 
@@ -98,6 +103,70 @@ def get_filename(parser: argparse.ArgumentParser) -> str:
     return args.filename
 
 
+def process_image(im: Image.Image) -> str:
+    print("Scaling image...")
+    im.thumbnail(IMAGE_SIZE)
+    image_array = np.array(im)
+
+    # Process pixels into blocks and coordinates
+    blocks = [[("stone", 0) for x in range(128)]]
+    # Cache for blocks, maps color tuple to block ID and height difference
+    block_cache = {}
+    for z in range(128):
+        print(f"Determining best blocks to use... row {z+1} out of 128", end="\r")
+        row = []
+        for x in range(128):
+            pixel_color = tuple(image_array[z][x])
+            if pixel_color in block_cache:
+                block_id, height_diff = block_cache[pixel_color]
+            else:
+                block_id, height_diff = get_block(pixel_color)
+                block = (block_id, blocks[z][x][1] + height_diff)
+                block_cache[pixel_color] = (block_id, height_diff)
+            row += [block]
+        blocks += [row]
+
+    # Normalises each column, so that the lowest block in that column is at zero
+    print("Normalizing height in each column...")
+    for x in range(128):
+        min_y = min(blocks[z][x][1] for z in range(-1, 128))
+        for z in range(-1, 128):
+            blocks[z][x] = (blocks[z][x][0], blocks[z][x][1] - min_y)
+
+    print("Preparing commands...")
+    block_commands = "\n".join(
+        f"setblock {x} {y} {z} {id}"
+        for x, (id, y) in enumerate(row)
+        for z, row in enumerate(blocks)
+    )
+    air_fill_commands = "\n".join(
+        f"fill 0 {y} -1 127 {y} 127 minecraft:air" for y in range(256)
+    )
+    text = f"{air_fill_commands}\n{block_commands}"
+
+    return text
+
+
+def export_datapack(text: str, img_filename: str):
+    datapack_name = "".join(
+        c if c.isalnum() else "_" for c in img_filename.rsplit(".", maxsplit=1)[0]
+    )
+    datapack_dir = os.path.join("datapacks", datapack_name)
+    os.makedirs(datapack_dir, exist_ok=True)
+    os.chdir(datapack_dir)
+    with open("pack.mcmeta", "w") as f:
+        metadata = {
+            "pack": {
+                "pack_format": 5,
+                "description": f"Draws {img_filename} using Minecraft blocks. Made with mcimage",
+            }
+        }
+        json.dump(metadata, f)
+
+    with open("draw.mcfunction", "w") as f:
+        f.write(text)
+
+
 def main():
     parser = get_arg_parser()
     filename = get_filename(parser)
@@ -105,6 +174,9 @@ def main():
         im = Image.open(filename)
     except UnidentifiedImageError:
         parser.error(f"{filename} is not an image file")
+
+    function_text = process_image(im)
+    export_datapack(function_text, filename)
 
 
 if __name__ == "__main__":
