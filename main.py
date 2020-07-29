@@ -113,7 +113,9 @@ def process_image(im: Image.Image) -> str:
     # Cache for blocks, maps color tuple to block ID and height difference
     block_cache = {}
     for z in range(IMAGE_SIZE):
-        print(f"Determining best blocks to use... row {z+1} out of 128", end="\r")
+        print(
+            f"Determining best blocks to use... row {z+1} out of {IMAGE_SIZE}", end="\r"
+        )
         row = []
         for x in range(IMAGE_SIZE):
             pixel_color = tuple(image_array[z][x])
@@ -142,7 +144,8 @@ def process_image(im: Image.Image) -> str:
             block_commands += f"setblock {x} {y} {z} {MC_NAMESPACE_ID}:{block_id}\n"
 
     air_fill_commands = "\n".join(
-        f"fill 0 {y} -1 127 {y} 127 minecraft:air" for y in range(256)
+        f"fill 0 {y} -1 {IMAGE_SIZE - 1} {y} {IMAGE_SIZE - 1} minecraft:air"
+        for y in range(256)
     )
     text = f"{air_fill_commands}\n{block_commands}"
 
