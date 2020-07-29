@@ -2,7 +2,6 @@
 # -*- coding: utf-8 -*-
 
 import argparse
-import math
 from typing import Sequence, Tuple
 
 from PIL import Image, UnidentifiedImageError
