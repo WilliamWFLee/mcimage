@@ -2,6 +2,8 @@
 # -*- coding: utf-8 -*-
 
 import argparse
+import math
+from typing import Sequence, Tuple
 
 from PIL import Image, UnidentifiedImageError
 
@@ -60,6 +62,27 @@ COLORS = {
     "red_terracotta": ((100, 42, 32), (122, 51, 39), (142, 60, 46)),
     "black_terracotta": ((26, 15, 11), (31, 18, 13), (37, 22, 16)),
 }
+
+Color = Sequence[int]
+
+
+def get_distance(c1: Color, c2: Color) -> float:
+    return sum((v1 - v2) ** 2 for v1, v2 in zip(c1, c2)) ** 0.5
+
+
+def get_block(color: Color) -> Tuple[str, int]:
+    closest_block_id = None
+    height_diff = None
+    closest_distance = None
+    for block_id, colors in COLORS.items():
+        for n, c in enumerate(colors):
+            distance = get_distance(c, color)
+            if closest_block_id is None or distance < closest_distance:
+                closest_block_id = block_id
+                height_diff = n - 1
+                closest_distance = distance
+
+    return (closest_block_id, height_diff)
 
 
 def get_arg_parser() -> argparse.ArgumentParser:
