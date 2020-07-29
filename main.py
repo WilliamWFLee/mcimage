@@ -136,8 +136,8 @@ def process_image(im: Image.Image) -> str:
     print("Preparing commands...")
     block_commands = "\n".join(
         f"setblock {x} {y} {z} {id}"
-        for x, (id, y) in enumerate(row)
         for z, row in enumerate(blocks)
+        for x, (id, y) in enumerate(row)
     )
     air_fill_commands = "\n".join(
         f"fill 0 {y} -1 127 {y} 127 minecraft:air" for y in range(256)
