@@ -155,8 +155,7 @@ def export_datapack(text: str, img_filename: str):
     functions_dir = os.path.join(datapack_dir, "data", datapack_name, "functions")
 
     os.makedirs(functions_dir, exist_ok=True)
-    os.chdir(datapack_dir)
-    with open("pack.mcmeta", "w") as f:
+    with open(os.path.join(datapack_dir, "pack.mcmeta"), "w") as f:
         metadata = {
             "pack": {
                 "pack_format": 5,
@@ -165,8 +164,7 @@ def export_datapack(text: str, img_filename: str):
         }
         json.dump(metadata, f)
 
-    os.chdir(functions_dir)
-    with open("draw.mcfunction", "w") as f:
+    with open(os.path.join(functions_dir, "draw.mcfunction"), "w") as f:
         f.write(text)
 
 
