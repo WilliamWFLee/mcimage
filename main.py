@@ -65,7 +65,7 @@ COLORS = {
     "black_terracotta": ((26, 15, 11), (31, 18, 13), (37, 22, 16)),
 }
 
-IMAGE_SIZE = (128, 128)
+IMAGE_SIZE = 128
 
 Color = Sequence[int]
 
@@ -105,17 +105,17 @@ def get_filename(parser: argparse.ArgumentParser) -> str:
 
 def process_image(im: Image.Image) -> str:
     print("Scaling image...")
-    im.thumbnail(IMAGE_SIZE)
+    im.thumbnail(2 * (IMAGE_SIZE,))
     image_array = np.array(im)
 
     # Process pixels into blocks and coordinates
-    blocks = [[("stone", 0) for x in range(128)]]
+    blocks = [[("stone", 0) for x in range(IMAGE_SIZE)]]
     # Cache for blocks, maps color tuple to block ID and height difference
     block_cache = {}
-    for z in range(128):
+    for z in range(IMAGE_SIZE):
         print(f"Determining best blocks to use... row {z+1} out of 128", end="\r")
         row = []
-        for x in range(128):
+        for x in range(IMAGE_SIZE):
             pixel_color = tuple(image_array[z][x])
             if pixel_color in block_cache:
                 block_id, height_diff = block_cache[pixel_color]
@@ -125,17 +125,18 @@ def process_image(im: Image.Image) -> str:
                 block_cache[pixel_color] = (block_id, height_diff)
             row += [block]
         blocks += [row]
+    print()
 
     # Normalises each column, so that the lowest block in that column is at zero
     print("Normalizing height in each column...")
-    for x in range(128):
-        min_y = min(blocks[z][x][1] for z in range(-1, 128))
-        for z in range(-1, 128):
-            blocks[z][x] = (blocks[z][x][0], blocks[z][x][1] - min_y)
+    for x in range(IMAGE_SIZE):
+        min_y = min(blocks[z][x][1] for z in range(-1, IMAGE_SIZE))
+        for z in range(-1, IMAGE_SIZE):
+            blocks[z][x] = (blocks[z + 1][x][0], blocks[z + 1][x][1] - min_y)
 
     print("Preparing commands...")
     block_commands = "\n".join(
-        f"setblock {x} {y} {z} {id}"
+        f"setblock {x} {y} {z-1} {id}"
         for z, row in enumerate(blocks)
         for x, (id, y) in enumerate(row)
     )
