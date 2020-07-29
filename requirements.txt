@@ -1,1 +1,1 @@
-# Add your package requirements here
+Pillow==7.2.0
