@@ -132,14 +132,15 @@ def process_image(im: Image.Image) -> str:
     for x in range(IMAGE_SIZE):
         min_y = min(blocks[z][x][1] for z in range(-1, IMAGE_SIZE))
         for z in range(-1, IMAGE_SIZE):
-            blocks[z][x] = (blocks[z + 1][x][0], blocks[z + 1][x][1] - min_y)
+            blocks[z + 1][x] = (blocks[z + 1][x][0], blocks[z + 1][x][1] - min_y)
 
     print("Preparing commands...")
-    block_commands = "\n".join(
-        f"setblock {x} {y} {z-1} {id}"
-        for z, row in enumerate(blocks)
-        for x, (id, y) in enumerate(row)
-    )
+    block_commands = ""
+    for z in range(-1, IMAGE_SIZE):
+        for x in range(IMAGE_SIZE):
+            block_id, y = blocks[z + 1][x]
+            block_commands += f"setblock {x} {y} {z} {MC_NAMESPACE_ID}:{block_id}\n"
+
     air_fill_commands = "\n".join(
         f"fill 0 {y} -1 127 {y} 127 minecraft:air" for y in range(256)
     )
