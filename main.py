@@ -65,7 +65,7 @@ COLORS = {
     "black_terracotta": ((26, 15, 11), (31, 18, 13), (37, 22, 16)),
 }
 
-IMAGE_SIZE = 128
+IMAGE_SIZE = 100
 
 Color = Sequence[int]
 
@@ -134,7 +134,7 @@ def process_image(im: Image.Image) -> str:
     for x in range(IMAGE_SIZE):
         min_y = min(blocks[z][x][1] for z in range(-1, IMAGE_SIZE))
         for z in range(-1, IMAGE_SIZE):
-            blocks[z + 1][x] = (blocks[z + 1][x][0], blocks[z + 1][x][1] - min_y)
+            blocks[z][x] = (blocks[z][x][0], blocks[z][x][1] - min_y)
 
     print("Preparing commands...")
     block_commands = ""
