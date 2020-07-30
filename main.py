@@ -99,19 +99,14 @@ def process_image_to_commands(im: Image.Image) -> str:
     return text
 
 
-def export_datapack(text: str, img_filename: str):
+def export_datapack(text: str, namespace: str):
     """
     Exports a datapack which the function text
 
     The function is saved in a datapack called mcimage.
 
-    The function to draw the image is namespaced under the image filename,
-    lowercased and all non-alphanumeric characters replaced with underscores
+    The function to draw the image is namespaced under the provided namespace
     """
-    namespace = "".join(
-        c.lower() if c.isalnum() else "_"
-        for c in img_filename.rsplit(".", maxsplit=1)[0]
-    )
     datapack_dir = os.path.join("datapacks", "mcimage")
     functions_dir = os.path.join(datapack_dir, "data", namespace, "functions")
 
@@ -129,6 +124,21 @@ def export_datapack(text: str, img_filename: str):
         f.write(text)
 
 
+def namespace_from_filename(img_filename: str):
+    """
+    Generates a namespace from a filename
+
+    Namespace is the filename, stripped of extension, lowercased
+    and all non-alphanumeric characters replaced with underscores
+    """
+    namespace = "".join(
+        c.lower() if c.isalnum() else "_"
+        for c in img_filename.rsplit(".", maxsplit=1)[0]
+    )
+
+    return namespace
+
+
 def main():
     parser = get_arg_parser()
     filename = get_filename(parser)
@@ -138,7 +148,7 @@ def main():
         parser.error(f"{filename} is not an image file")
 
     function_text = process_image_to_commands(im)
-    export_datapack(function_text, filename)
+    export_datapack(function_text, namespace_from_filename(filename))
 
 
 if __name__ == "__main__":
