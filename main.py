@@ -146,6 +146,8 @@ def main():
         im = Image.open(filename)
     except UnidentifiedImageError:
         parser.error(f"{filename} is not an image file")
+    except FileNotFoundError:
+        parser.error(f"{filename} was not found")
 
     function_text = process_image_to_commands(im)
     export_datapack(function_text, namespace_from_filename(filename))
