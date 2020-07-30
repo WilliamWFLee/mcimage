@@ -3,7 +3,7 @@
 
 import os
 import pickle
-from typing import Sequence, Tuple
+from typing import List, Sequence, Tuple
 
 Color = Sequence[int]
 
@@ -95,6 +95,29 @@ def get_block(color: Color) -> Tuple[str, int]:
 
     COLOR_CACHE[color] = (closest_block_id, height_diff)
     return (closest_block_id, height_diff)
+
+
+def process_pixels(pixels: Sequence[Sequence[int]]) -> List[List[Tuple[str, int]]]:
+    image_size = len(pixels)
+    # Process pixels into blocks and coordinates
+    blocks = [[("stone", 0) for x in range(image_size)]]
+    # Cache for blocks, maps color tuple to block ID and height difference
+    for z in range(image_size):
+        print(
+            f"Determining blocks... row {z+1}/{image_size}", end="\r"
+        )
+        row = []
+        for x in range(image_size):
+            pixel_color = tuple(pixels[z][x])
+            block_id, height_diff = get_block(pixel_color)
+            block = (block_id, blocks[z][x][1] + height_diff)
+            row += [block]
+        blocks += [row]
+
+    print()
+    save_cache()
+
+    return blocks
 
 
 def save_cache():

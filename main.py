@@ -4,16 +4,18 @@
 import argparse
 import json
 import os
+from typing import Sequence, Tuple
 
 import numpy as np
 from PIL import Image, UnidentifiedImageError
 
-from color import get_block, save_cache
-
-MC_NAMESPACE_ID = "minecraft"
+from color import process_pixels
 
 IMAGE_SIZE = 128
 MAP_OFFSET = 64
+
+SETBLOCK_TEMPLATE = "setblock {x} {y} {z} {block_id}\n"
+FILL_TEMPLATE = "setblock {x1} {y1} {z1} {x2} {y2} {z2} {block_id}\n"
 
 
 def get_arg_parser() -> argparse.ArgumentParser:
@@ -30,54 +32,69 @@ def get_filename(parser: argparse.ArgumentParser) -> str:
     return args.filename
 
 
-def process_image(im: Image.Image) -> str:
-    print("Scaling image...")
-    im.thumbnail(2 * (IMAGE_SIZE,))
-    image_array = np.array(im)
-
-    # Process pixels into blocks and coordinates
-    blocks = [[("stone", 0) for x in range(IMAGE_SIZE)]]
-    # Cache for blocks, maps color tuple to block ID and height difference
-    for z in range(IMAGE_SIZE):
-        print(
-            f"Determining best blocks to use... row {z+1} out of {IMAGE_SIZE}", end="\r"
-        )
-        row = []
-        for x in range(IMAGE_SIZE):
-            pixel_color = tuple(image_array[z][x])
-            block_id, height_diff = get_block(pixel_color)
-            block = (block_id, blocks[z][x][1] + height_diff)
-            row += [block]
-        blocks += [row]
-
-    print()
-    save_cache()
-
-    # Normalises each column, so that the lowest block in that column is at zero
+def normalize_columns(blocks):
+    """
+    Normalizes the height of blocks in the column
+    such that the lowest block is at the zero level
+    """
     print("Normalizing height in each column...")
     for x in range(IMAGE_SIZE):
         min_y = min(blocks[z][x][1] for z in range(-1, IMAGE_SIZE))
         for z in range(-1, IMAGE_SIZE):
             blocks[z][x] = (blocks[z][x][0], blocks[z][x][1] - min_y)
 
-    print("Preparing commands...")
+
+def process_image(im: Image.Image):
+    """
+    Scales and processes the image to an array of pixels
+    """
+    print("Scaling image...")
+    im.thumbnail(2 * (IMAGE_SIZE,))
+    return np.array(im)
+
+
+def prepare_commands(blocks: Sequence[Sequence[Tuple[str, int]]]) -> str:
+    """
+    Prepares commands from the given blocks
+    """
+    print("Preparing commands... ", end="")
+    image_size = len(blocks[0])
     block_commands = ""
-    for z in range(-1, IMAGE_SIZE):
-        for x in range(IMAGE_SIZE):
+    for z in range(-1, image_size):
+        for x in range(image_size):
             block_id, y = blocks[z + 1][x]
-            block_commands += (
-                f"setblock {x - MAP_OFFSET} {y} {z - MAP_OFFSET} "
-                f"{MC_NAMESPACE_ID}:{block_id}\n"
+            block_commands += SETBLOCK_TEMPLATE.format(
+                x=x - MAP_OFFSET,
+                y=y,
+                z=z - MAP_OFFSET,
+                block_id=f"minecraft:{block_id}",
             )
 
-    air_fill_commands = "\n".join(
-        (
-            f"fill {-MAP_OFFSET} {y} {-MAP_OFFSET-1} {IMAGE_SIZE - MAP_OFFSET - 1} "
-            f"{y} {IMAGE_SIZE - MAP_OFFSET - 1} minecraft:air"
+    air_fill_commands = "".join(
+        FILL_TEMPLATE.format(
+            x1=-MAP_OFFSET,
+            y1=y,
+            z1=-MAP_OFFSET - 1,
+            x2=image_size - MAP_OFFSET - 1,
+            y2=y,
+            z2=image_size - MAP_OFFSET - 1,
+            block_id="minecraft:air",
         )
         for y in range(256)
     )
-    text = f"{air_fill_commands}\n{block_commands}"
+    text = f"{air_fill_commands}{block_commands}"
+
+    print("done")
+    return text
+
+
+def process_image_to_commands(im: Image.Image) -> str:
+    """
+    Processes an image opened in Pillow to commands
+    """
+    pixels = process_image(im)
+    blocks = process_pixels(pixels)
+    text = prepare_commands(blocks)
 
     return text
 
@@ -111,7 +128,7 @@ def main():
     except UnidentifiedImageError:
         parser.error(f"{filename} is not an image file")
 
-    function_text = process_image(im)
+    function_text = process_image_to_commands(im)
     export_datapack(function_text, filename)
 
 
