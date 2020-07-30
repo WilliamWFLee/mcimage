@@ -117,7 +117,7 @@ def get_distance(target_color: Color, compare_color: Color) -> float:
     sat_diff = HSV_WEIGHTS["sat"] * (compare_hsv[1] - target_hsv[1]) ** 2
     val_diff = HSV_WEIGHTS["val"] * (compare_hsv[2] - target_hsv[2]) ** 2
 
-    return sum((hue_diff * sum(target_color), sat_diff, val_diff))
+    return sum((hue_diff, sat_diff, val_diff))
 
 
 def get_block(color: Color) -> Tuple[str, int]:
