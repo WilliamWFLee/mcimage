@@ -19,18 +19,15 @@ SETBLOCK_TEMPLATE = "setblock {x} {y} {z} {block_id}\n"
 FILL_TEMPLATE = "fill {x1} {y1} {z1} {x2} {y2} {z2} {block_id}\n"
 
 
-def get_arg_parser() -> argparse.ArgumentParser:
+def parse_args() -> Tuple[argparse.ArgumentParser, argparse.Namespace]:
     parser = argparse.ArgumentParser(
         prog="mcimage",
         description="Generates a function file to place blocks in Minecraft for pixel art",
     )
     parser.add_argument("filename")
-    return parser
 
-
-def get_filename(parser: argparse.ArgumentParser) -> str:
     args = parser.parse_args()
-    return args.filename
+    return parser, args
 
 
 def normalize_columns(blocks):
@@ -144,17 +141,16 @@ def namespace_from_filename(img_filename: str):
 
 
 def main():
-    parser = get_arg_parser()
-    filename = get_filename(parser)
+    parser, args = parse_args()
     try:
-        im = Image.open(filename)
+        im = Image.open(args.filename)
     except UnidentifiedImageError:
-        parser.error(f"{filename} is not an image file")
+        parser.error(f"{args.filename} is not an image file")
     except FileNotFoundError:
-        parser.error(f"{filename} was not found")
+        parser.error(f"{args.filename} was not found")
 
     function_text = process_image_to_commands(im)
-    export_datapack(function_text, namespace_from_filename(filename))
+    export_datapack(function_text, namespace_from_filename(args.filename))
 
 
 if __name__ == "__main__":
