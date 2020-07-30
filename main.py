@@ -100,9 +100,18 @@ def process_image_to_commands(im: Image.Image) -> str:
 
 
 def export_datapack(text: str, img_filename: str):
+    """
+    Exports a datapack which the function text
+
+    The function is saved in a datapack called mcimage.
+
+    The function to draw the image is namespaced under the image filename,
+    lowercased and all non-alphanumeric characters replaced with underscores
+    """
     namespace = "".join(
-        c if c.isalnum() else "_" for c in img_filename.rsplit(".", maxsplit=1)[0]
-    ).lower()
+        c.lower() if c.isalnum() else "_"
+        for c in img_filename.rsplit(".", maxsplit=1)[0]
+    )
     datapack_dir = os.path.join("datapacks", "mcimage")
     functions_dir = os.path.join(datapack_dir, "data", namespace, "functions")
 
