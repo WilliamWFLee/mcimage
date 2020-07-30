@@ -62,6 +62,8 @@ COLORS = {
     "black_terracotta": ((26, 15, 11), (31, 18, 13), (37, 22, 16)),
 }
 
+HSV_WEIGHTS = {"hue": 0.47, "sat": 0.29, "val": 0.24}
+
 # Maps RGB color to most suitable block and height difference
 COLOR_CACHE = {}
 
@@ -76,18 +78,24 @@ else:
     print("Color mappings found will be saved for future use")
 
 
-def get_distance(c1: Color, c2: Color) -> float:
+def get_distance(target_color: Color, compare_color: Color) -> float:
     """
     Gets the distance of one color from the other.
 
     Both colors are a tuple of three integers, each a component of RGB, 0 to 255.
 
     Colors are converted to HSV using colorsys, and their distance is calculated
-    the square root of the sum of the differences of the squares of each color component
+    as the square root of a weighted sum of the differences
+    of the squares of each color component
     """
-    c1_hsv = colorsys.rgb_to_hls(*[v / 255 for v in c1])
-    c2_hsv = colorsys.rgb_to_hls(*[v / 255 for v in c2])
-    return sum((v1 - v2) ** 2 for v1, v2 in zip(c1_hsv, c2_hsv)) ** 0.5
+    target_hsv = colorsys.rgb_to_hsv(*[v / 255 for v in target_color])
+    compare_hsv = colorsys.rgb_to_hsv(*[v / 255 for v in compare_color])
+
+    hue_diff = HSV_WEIGHTS["hue"] * (compare_hsv[0] - target_hsv[0]) ** 2
+    sat_diff = HSV_WEIGHTS["sat"] * (compare_hsv[1] - target_hsv[1]) ** 2
+    val_diff = HSV_WEIGHTS["val"] * (compare_hsv[2] - target_hsv[2]) ** 2
+
+    return sum((hue_diff * sum(target_color), sat_diff, val_diff))
 
 
 def get_block(color: Color) -> Tuple[str, int]:
@@ -112,11 +120,8 @@ def process_pixels(pixels: Sequence[Sequence[int]]) -> List[List[Tuple[str, int]
     image_size = len(pixels)
     # Process pixels into blocks and coordinates
     blocks = [[("stone", 0) for x in range(image_size)]]
-    # Cache for blocks, maps color tuple to block ID and height difference
     for z in range(image_size):
-        print(
-            f"Determining blocks... row {z+1}/{image_size}", end="\r"
-        )
+        print(f"Determining blocks... row {z+1}/{image_size}", end="\r")
         row = []
         for x in range(image_size):
             pixel_color = tuple(pixels[z][x])
