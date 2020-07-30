@@ -100,18 +100,18 @@ def process_image_to_commands(im: Image.Image) -> str:
 
 
 def export_datapack(text: str, img_filename: str):
-    datapack_name = "".join(
+    namespace = "".join(
         c if c.isalnum() else "_" for c in img_filename.rsplit(".", maxsplit=1)[0]
     ).lower()
-    datapack_dir = os.path.join("datapacks", datapack_name)
-    functions_dir = os.path.join(datapack_dir, "data", datapack_name, "functions")
+    datapack_dir = os.path.join("datapacks", "mcimage")
+    functions_dir = os.path.join(datapack_dir, "data", namespace, "functions")
 
     os.makedirs(functions_dir, exist_ok=True)
     with open(os.path.join(datapack_dir, "pack.mcmeta"), "w") as f:
         metadata = {
             "pack": {
                 "pack_format": 5,
-                "description": f"Draws {img_filename} using Minecraft blocks. Made with mcimage",
+                "description": "Draw images in Minecraft with map pixel art",
             }
         }
         json.dump(metadata, f)
