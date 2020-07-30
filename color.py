@@ -84,7 +84,7 @@ COLORS = {
     "black_terracotta": ((26, 15, 11), (31, 18, 13), (37, 22, 16)),
 }
 
-HSV_WEIGHTS = {"hue": 0.47, "sat": 0.29, "val": 0.24}
+COLOR_WEIGHTS = (0.47, 0.29, 0.24, 0.15)
 
 # Maps RGB color to most suitable block and height difference
 COLOR_CACHE = {}
@@ -110,14 +110,23 @@ def get_distance(target_color: Color, compare_color: Color) -> float:
     as the square root of a weighted sum of the differences
     of the squares of each color component
     """
+
+    def wraparound_hue(hue):
+        return hue - 1 if hue > 0.5 else hue
+
     target_hsv = colorsys.rgb_to_hsv(*[v / 255 for v in target_color])
     compare_hsv = colorsys.rgb_to_hsv(*[v / 255 for v in compare_color])
 
-    hue_diff = HSV_WEIGHTS["hue"] * (compare_hsv[0] - target_hsv[0]) ** 2
-    sat_diff = HSV_WEIGHTS["sat"] * (compare_hsv[1] - target_hsv[1]) ** 2
-    val_diff = HSV_WEIGHTS["val"] * (compare_hsv[2] - target_hsv[2]) ** 2
+    hue_diff = (wraparound_hue(compare_hsv[0]) - wraparound_hue(target_hsv[0])) ** 2
+    sat_diff = (compare_hsv[1] - target_hsv[1]) ** 2
+    val_diff = (compare_hsv[2] - target_hsv[2]) ** 2
+    rgb_diff = (
+        sum(((v2 - v1) / 255) for v1, v2 in zip(compare_color, target_color)) ** 2
+    )
 
-    return sum((hue_diff, sat_diff, val_diff))
+    return sum(
+        w * v for v, w in zip((hue_diff, sat_diff, val_diff, rgb_diff), COLOR_WEIGHTS)
+    )
 
 
 def get_block(color: Color) -> Tuple[str, int]:
