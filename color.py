@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+import os
+import pickle
 from typing import Sequence, Tuple
 
 Color = Sequence[int]
@@ -59,12 +61,27 @@ COLORS = {
     "black_terracotta": ((26, 15, 11), (31, 18, 13), (37, 22, 16)),
 }
 
+# Maps RGB color to most suitable block and height difference
+COLOR_CACHE = {}
+
+print("Looking for color cache... ")
+if os.path.exists("color.cache"):
+    print("Color cache found, loading... ", end="")
+    with open("color.cache", "rb") as f:
+        COLOR_CACHE.update(pickle.load(f))
+    print("done.")
+else:
+    print("Color cache wasn't found, image processing may take longer")
+    print("Color mappings found will be saved for future use")
+
 
 def get_distance(c1: Color, c2: Color) -> float:
     return sum((v1 - v2) ** 2 for v1, v2 in zip(c1, c2)) ** 0.5
 
 
 def get_block(color: Color) -> Tuple[str, int]:
+    if color in COLOR_CACHE:
+        return COLOR_CACHE[color]
     closest_block_id = None
     height_diff = None
     closest_distance = None
@@ -76,4 +93,12 @@ def get_block(color: Color) -> Tuple[str, int]:
                 height_diff = n - 1
                 closest_distance = distance
 
+    COLOR_CACHE[color] = (closest_block_id, height_diff)
     return (closest_block_id, height_diff)
+
+
+def save_cache():
+    print("Saving color cache... ", end="")
+    with open("color.cache", "wb") as f:
+        pickle.dump(COLOR_CACHE, f)
+    print("done")

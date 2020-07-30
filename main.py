@@ -8,7 +8,7 @@ import os
 import numpy as np
 from PIL import Image, UnidentifiedImageError
 
-from color import get_block
+from color import get_block, save_cache
 
 MC_NAMESPACE_ID = "minecraft"
 
@@ -38,7 +38,6 @@ def process_image(im: Image.Image) -> str:
     # Process pixels into blocks and coordinates
     blocks = [[("stone", 0) for x in range(IMAGE_SIZE)]]
     # Cache for blocks, maps color tuple to block ID and height difference
-    block_cache = {}
     for z in range(IMAGE_SIZE):
         print(
             f"Determining best blocks to use... row {z+1} out of {IMAGE_SIZE}", end="\r"
@@ -46,15 +45,13 @@ def process_image(im: Image.Image) -> str:
         row = []
         for x in range(IMAGE_SIZE):
             pixel_color = tuple(image_array[z][x])
-            if pixel_color in block_cache:
-                block_id, height_diff = block_cache[pixel_color]
-            else:
-                block_id, height_diff = get_block(pixel_color)
-                block_cache[pixel_color] = (block_id, height_diff)
+            block_id, height_diff = get_block(pixel_color)
             block = (block_id, blocks[z][x][1] + height_diff)
             row += [block]
         blocks += [row]
+
     print()
+    save_cache()
 
     # Normalises each column, so that the lowest block in that column is at zero
     print("Normalizing height in each column...")
