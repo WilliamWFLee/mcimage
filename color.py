@@ -84,7 +84,7 @@ COLORS = {
     "black_terracotta": ((26, 15, 11), (31, 18, 13), (37, 22, 16)),
 }
 
-COLOR_WEIGHTS = (0.47, 0.29, 0.24, 0.15)
+COLOR_WEIGHTS = (0.47, 0.29, 0.24, 0.2)
 
 # Maps RGB color to most suitable block and height difference
 COLOR_CACHE = {}
