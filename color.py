@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+import colorsys
 import os
 import pickle
 from typing import List, Sequence, Tuple
@@ -76,7 +77,17 @@ else:
 
 
 def get_distance(c1: Color, c2: Color) -> float:
-    return sum((v1 - v2) ** 2 for v1, v2 in zip(c1, c2)) ** 0.5
+    """
+    Gets the distance of one color from the other.
+
+    Both colors are a tuple of three integers, each a component of RGB, 0 to 255.
+
+    Colors are converted to HSV using colorsys, and their distance is calculated
+    the square root of the sum of the differences of the squares of each color component
+    """
+    c1_hsv = colorsys.rgb_to_hls(*[v / 255 for v in c1])
+    c2_hsv = colorsys.rgb_to_hls(*[v / 255 for v in c2])
+    return sum((v1 - v2) ** 2 for v1, v2 in zip(c1_hsv, c2_hsv)) ** 0.5
 
 
 def get_block(color: Color) -> Tuple[str, int]:
