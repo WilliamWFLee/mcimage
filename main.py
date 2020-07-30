@@ -13,6 +13,7 @@ from color import process_pixels
 
 IMAGE_SIZE = 128
 MAP_OFFSET = 64
+BASE_HEIGHT = 10
 
 SETBLOCK_TEMPLATE = "setblock {x} {y} {z} {block_id}\n"
 FILL_TEMPLATE = "fill {x1} {y1} {z1} {x2} {y2} {z2} {block_id}\n"
@@ -37,11 +38,13 @@ def normalize_columns(blocks):
     Normalizes the height of blocks in the column
     such that the lowest block is at the zero level
     """
-    print("Normalizing height in each column...")
+    print("Normalizing height in each column... ", end="")
     for x in range(IMAGE_SIZE):
         min_y = min(blocks[z][x][1] for z in range(-1, IMAGE_SIZE))
         for z in range(-1, IMAGE_SIZE):
             blocks[z][x] = (blocks[z][x][0], blocks[z][x][1] - min_y)
+
+    print("done")
 
 
 def process_image(im: Image.Image):
@@ -65,7 +68,7 @@ def prepare_commands(blocks: Sequence[Sequence[Tuple[str, int]]]) -> str:
             block_id, y = blocks[z + 1][x]
             block_commands += SETBLOCK_TEMPLATE.format(
                 x=x - MAP_OFFSET,
-                y=y,
+                y=y + BASE_HEIGHT,
                 z=z - MAP_OFFSET,
                 block_id=f"minecraft:{block_id}",
             )
@@ -80,7 +83,7 @@ def prepare_commands(blocks: Sequence[Sequence[Tuple[str, int]]]) -> str:
             z2=image_size - MAP_OFFSET - 1,
             block_id="minecraft:air",
         )
-        for y in range(256)
+        for y in range(BASE_HEIGHT, 256)
     )
     text = f"{air_fill_commands}{block_commands}"
 
@@ -94,6 +97,7 @@ def process_image_to_commands(im: Image.Image) -> str:
     """
     pixels = process_image(im)
     blocks = process_pixels(pixels)
+    normalize_columns(blocks)
     text = prepare_commands(blocks)
 
     return text
