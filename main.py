@@ -165,7 +165,8 @@ def namespace_from_filename(img_filename: str):
 def main():
     parser, args = parse_args()
     try:
-        im = Image.open(args.filename)
+        # TODO: RGBA -> RGB
+        im = Image.open(args.filename).convert("RGB")
     except UnidentifiedImageError:
         parser.error(f"{args.filename} is not an image file")
     except FileNotFoundError:

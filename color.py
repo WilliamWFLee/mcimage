@@ -86,18 +86,84 @@ COLORS = {
 
 COLOR_WEIGHTS = (0.47, 0.29, 0.24, 0.2)
 
-# Maps RGB color to most suitable block and height difference
-COLOR_CACHE = {}
 
-print("Looking for color cache... ")
-if os.path.exists("color.cache"):
-    print("Color cache found, loading... ", end="")
-    with open("color.cache", "rb") as f:
-        COLOR_CACHE.update(pickle.load(f))
-    print("done.")
-else:
-    print("Color cache wasn't found, image processing may take longer")
-    print("Color mappings found will be saved for future use")
+class ColorCache:
+    """
+    A class for mapping RGB color tuples to most appropriate blocks and elevations
+    """
+
+    def __init__(self):
+        self._cache = {}
+
+    def open(self):
+        """
+        Opens the color cache from file
+        """
+        print("Looking for color cache... ")
+        if os.path.exists("color.cache"):
+            print("Color cache found, loading... ", end="")
+            with open("color.cache", "rb") as f:
+                self._cache.update(pickle.load(f))
+            print("done.")
+        else:
+            print("Color cache wasn't found, image processing may take longer")
+
+    def close(self):
+        """
+        Saves and closes the color cache
+        """
+        print("Saving color cache... ", end="")
+        with open("color.cache", "wb") as f:
+            pickle.dump(self._cache, f)
+        print("done")
+
+    def find(self, color: Color) -> Tuple[str, int]:
+        """
+        Finds corresponding block/elevation difference in cache
+
+        Returns None is not found
+        """
+        return self._cache[color] if color in self._cache else None
+
+    def add(self, color: Color, block_id: str, height_diff: int, replace: bool = True):
+        """
+        Adds a new color to the cache
+
+        If replace is True, then the given color in cache is replaced if it exists,
+        else a ValueError is raised.
+        """
+        if not isinstance(color, tuple):
+            raise TypeError(
+                f"Color must be of type 'tuple', got {type(color).__name__!r}"
+            )
+        if len(color) != 3:
+            raise ValueError(f"Color must be of length 3, got {len(color)}")
+
+        if not replace and color in self._cache:
+            raise ValueError("Mapping for color {color} already exists")
+        self._cache[color] = (block_id, height_diff)
+
+    def __enter__(self):
+        self.open()
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.close()
+
+    def __iter__(self):
+        return iter(self._cache)
+
+    def __contains__(self, key):
+        return key in self._cache
+
+    def __setitem__(self, key, value):
+        self.add(key, *value)
+
+    def __getitem__(self, key):
+        color = self.find(key)
+        if color is None:
+            raise KeyError(color)
+        return color
 
 
 def get_distance(target_color: Color, compare_color: Color) -> float:
@@ -129,9 +195,9 @@ def get_distance(target_color: Color, compare_color: Color) -> float:
     )
 
 
-def get_block(color: Color) -> Tuple[str, int]:
-    if color in COLOR_CACHE:
-        return COLOR_CACHE[color]
+def get_block(color: Color, cache: ColorCache) -> Tuple[str, int]:
+    if color in cache:
+        return cache[color]
     closest_block_id = None
     height_diff = None
     closest_distance = None
@@ -143,7 +209,7 @@ def get_block(color: Color) -> Tuple[str, int]:
                 height_diff = n - 1
                 closest_distance = distance
 
-    COLOR_CACHE[color] = (closest_block_id, height_diff)
+    cache[color] = (closest_block_id, height_diff)
     return (closest_block_id, height_diff)
 
 
@@ -151,24 +217,16 @@ def process_pixels(pixels: Sequence[Sequence[int]]) -> List[List[Tuple[str, int]
     image_size = len(pixels)
     # Process pixels into blocks and coordinates
     blocks = [[("stone", 0) for x in range(image_size)]]
-    for z in range(image_size):
-        print(f"Determining blocks... row {z+1}/{image_size}", end="\r")
-        row = []
-        for x in range(image_size):
-            pixel_color = tuple(pixels[z][x])
-            block_id, height_diff = get_block(pixel_color)
-            block = (block_id, blocks[z][x][1] + height_diff)
-            row += [block]
-        blocks += [row]
-
-    print()
-    save_cache()
+    with ColorCache() as cache:
+        for z in range(image_size):
+            print(f"Determining blocks... row {z+1}/{image_size}", end="\r")
+            row = []
+            for x in range(image_size):
+                pixel_color = tuple(pixels[z][x])
+                block_id, height_diff = get_block(pixel_color, cache)
+                block = (block_id, blocks[z][x][1] + height_diff)
+                row += [block]
+            blocks += [row]
+        print()
 
     return blocks
-
-
-def save_cache():
-    print("Saving color cache... ", end="")
-    with open("color.cache", "wb") as f:
-        pickle.dump(COLOR_CACHE, f)
-    print("done")
