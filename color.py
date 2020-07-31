@@ -26,6 +26,7 @@ SOFTWARE
 import colorsys
 import os
 import pickle
+import itertools
 from typing import List, Sequence, Tuple
 
 Color = Sequence[int]
@@ -84,7 +85,7 @@ COLORS = {
     "black_terracotta": ((26, 15, 11), (31, 18, 13), (37, 22, 16)),
 }
 
-COLOR_WEIGHTS = (0.47, 0.29, 0.24, 0.2)
+COLOR_WEIGHTS = (0.47, 0.29, 0.24, 0.26)
 
 
 class ColorCache:
@@ -183,8 +184,11 @@ def get_distance(target_color: Color, compare_color: Color) -> float:
     target_hsv = colorsys.rgb_to_hsv(*[v / 255 for v in target_color])
     compare_hsv = colorsys.rgb_to_hsv(*[v / 255 for v in compare_color])
 
-    hue_diff = (wraparound_hue(compare_hsv[0]) - wraparound_hue(target_hsv[0])) ** 2
-    sat_diff = (compare_hsv[1] - target_hsv[1]) ** 2
+    hue_diff = (
+        target_hsv[1] * target_hsv[2]
+        * (wraparound_hue(compare_hsv[0]) - wraparound_hue(target_hsv[0])) ** 2
+    )
+    sat_diff = (1 - target_hsv[1]) * (compare_hsv[1] - target_hsv[1]) ** 2
     val_diff = (compare_hsv[2] - target_hsv[2]) ** 2
     rgb_diff = (
         sum(((v2 - v1) / 255) for v1, v2 in zip(compare_color, target_color)) ** 2
@@ -203,7 +207,7 @@ def get_block(color: Color, cache: ColorCache) -> Tuple[str, int]:
     closest_distance = None
     for block_id, colors in COLORS.items():
         for n, c in enumerate(colors):
-            distance = get_distance(c, color)
+            distance = get_distance(color, c)
             if closest_block_id is None or distance < closest_distance:
                 closest_block_id = block_id
                 height_diff = n - 1
