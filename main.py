@@ -171,7 +171,7 @@ def namespace_from_filename(img_filename: str):
     """
     namespace = "".join(
         c.lower() if c.isalnum() else "_"
-        for c in img_filename.rsplit(".", maxsplit=1)[0]
+        for c in os.path.basename(img_filename).rsplit(".", maxsplit=1)[0]
     )
 
     return namespace
