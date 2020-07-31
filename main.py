@@ -114,7 +114,7 @@ def prepare_commands(blocks: Sequence[Sequence[Tuple[str, int]]]) -> str:
         )
         for y in range(BASE_HEIGHT, 256)
     )
-    text = f"{air_fill_commands}{block_commands}"
+    text = f"gamemode creative @s\ntp @s 0 150 0\n{air_fill_commands}{block_commands}"
 
     print("done")
     return text
