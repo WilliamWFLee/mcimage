@@ -101,7 +101,7 @@ class ColorCache:
         """
         Opens the color cache from file
         """
-        print("Looking for color cache... ")
+        print(f"Looking for color cache in {self._CACHE_FILENAME}... ")
         if os.path.exists(self._CACHE_FILENAME):
             print("Color cache found, loading... ", end="")
             with open(self._CACHE_FILENAME, "rb") as f:

@@ -132,7 +132,7 @@ def process_image_to_commands(im: Image.Image) -> str:
     return text
 
 
-def export_datapack(text: str, namespace: str):
+def export_datapack(commands: str, name: str, directory: str, namespace: str):
     """
     Exports a datapack which the function text
 
@@ -142,7 +142,7 @@ def export_datapack(text: str, namespace: str):
     """
 
     print("Exporting commands to datapack... ", end="")
-    datapack_dir = os.path.join(os.path.dirname(__file__), "datapacks", "mcimage")
+    datapack_dir = os.path.join(directory, name)
     functions_dir = os.path.join(datapack_dir, "data", namespace, "functions")
 
     os.makedirs(functions_dir, exist_ok=True)
@@ -156,7 +156,7 @@ def export_datapack(text: str, namespace: str):
         json.dump(metadata, f)
 
     with open(os.path.join(functions_dir, "draw.mcfunction"), "w") as f:
-        f.write(text)
+        f.write(commands)
     print("done")
     print(f"Datapack exported as directory {datapack_dir}")
     print(f"Function name will be {namespace}:draw")
@@ -186,8 +186,10 @@ def main():
     except FileNotFoundError:
         parser.error(f"{args.filename} was not found")
 
-    function_text = process_image_to_commands(im)
-    export_datapack(function_text, namespace_from_filename(args.filename))
+    commands = process_image_to_commands(im)
+    export_datapack(
+        commands, args.name, args.dir, namespace_from_filename(args.filename)
+    )
 
 
 if __name__ == "__main__":
