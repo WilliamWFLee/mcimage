@@ -46,6 +46,26 @@ def parse_args() -> Tuple[argparse.ArgumentParser, argparse.Namespace]:
         prog="mcimage",
         description="Generates a function file to place blocks in Minecraft for pixel art",
     )
+    parser.add_argument(
+        "-d",
+        metavar="dir",
+        dest="datapack_dir",
+        help="Directory to place generated datapacks",
+        default=os.path.join(os.path.dirname(__file__), "datapacks"),
+    )
+    parser.add_argument(
+        "-n",
+        metavar="name",
+        dest="datapack_name",
+        help="Name of datapack to export, which contains the function file",
+        default="mcimage",
+    )
+    parser.add_argument(
+        "--ns",
+        metavar="namespace",
+        dest="namespace",
+        help="Namespace of the function. Defaults to be being derived from filename",
+    )
     parser.add_argument("filename")
 
     args = parser.parse_args()
@@ -188,7 +208,10 @@ def main():
 
     commands = process_image_to_commands(im)
     export_datapack(
-        commands, args.name, args.dir, namespace_from_filename(args.filename)
+        commands,
+        args.datapack_name,
+        args.datapack_dir,
+        namespace_from_filename(args.filename),
     )
 
 
