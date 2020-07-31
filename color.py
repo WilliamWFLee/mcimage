@@ -26,7 +26,6 @@ SOFTWARE
 import colorsys
 import os
 import pickle
-import itertools
 from typing import List, Sequence, Tuple
 
 Color = Sequence[int]
@@ -93,6 +92,8 @@ class ColorCache:
     A class for mapping RGB color tuples to most appropriate blocks and elevations
     """
 
+    _CACHE_FILENAME = os.path.join(os.path.dirname(__file__), "color.cache")
+
     def __init__(self):
         self._cache = {}
 
@@ -101,9 +102,9 @@ class ColorCache:
         Opens the color cache from file
         """
         print("Looking for color cache... ")
-        if os.path.exists("color.cache"):
+        if os.path.exists(self._CACHE_FILENAME):
             print("Color cache found, loading... ", end="")
-            with open("color.cache", "rb") as f:
+            with open(self._CACHE_FILENAME, "rb") as f:
                 self._cache.update(pickle.load(f))
             print("done.")
         else:
@@ -114,7 +115,7 @@ class ColorCache:
         Saves and closes the color cache
         """
         print("Saving color cache... ", end="")
-        with open("color.cache", "wb") as f:
+        with open(self._CACHE_FILENAME, "wb") as f:
             pickle.dump(self._cache, f)
         print("done")
 

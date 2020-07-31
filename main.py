@@ -140,7 +140,9 @@ def export_datapack(text: str, namespace: str):
 
     The function to draw the image is namespaced under the provided namespace
     """
-    datapack_dir = os.path.join("datapacks", "mcimage")
+
+    print("Exporting commands to datapack... ", end="")
+    datapack_dir = os.path.join(os.path.dirname(__file__), "datapacks", "mcimage")
     functions_dir = os.path.join(datapack_dir, "data", namespace, "functions")
 
     os.makedirs(functions_dir, exist_ok=True)
@@ -155,6 +157,9 @@ def export_datapack(text: str, namespace: str):
 
     with open(os.path.join(functions_dir, "draw.mcfunction"), "w") as f:
         f.write(text)
+    print("done")
+    print(f"Datapack exported as directory {datapack_dir}")
+    print(f"Function name will be {namespace}:draw")
 
 
 def namespace_from_filename(img_filename: str):
