@@ -100,7 +100,7 @@ def process_image(im: Image.Image):
         im = im.crop((x, y, x + square_width, y + square_width))
 
     print(f"Scaling to {2 * (IMAGE_SIZE,)}")
-    im.thumbnail(2 * (IMAGE_SIZE,))
+    im.thumbnail(2 * (IMAGE_SIZE,), resample=Image.LANCZOS, reducing_gap=3.0)
 
     return np.array(im)
 
