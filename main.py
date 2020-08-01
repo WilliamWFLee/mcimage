@@ -109,6 +109,25 @@ class MCImage:
 
         print("done")
 
+    def _block_off_water(self):
+        """
+        Blocks off water blocks on their surrounding sides to prevent it
+        from spilling over other blocks
+        """
+        print("Blocking off any water blocks...")
+        self._water_blockers = set()
+        for x in range(self._image_size):
+            for z in range(self._image_size):
+                block_id, y = self.blocks[z][x]
+                if block_id == "water":
+                    for dx, dz in ((0, 1), (0, -1), (1, 0), (-1, 0)):
+                        if (
+                            not 0 <= x + dx < self._image_size
+                            or not 0 <= z + dz < self._image_size
+                            or self.blocks[z + dz][x + dx][1] <= y
+                        ):
+                            self._water_blockers.add((x + dx, y, z + dz))
+
     def _process_image(self):
         """
         Scales and processes the image to an array of pixels
@@ -136,6 +155,8 @@ class MCImage:
 
     def _process_pixels(self):
         self.blocks = ColorProcessor.process_pixels(self.pixels)
+        self._normalize_columns()
+        self._block_off_water()
 
     def _prepare_commands(self) -> str:
         """
@@ -167,6 +188,16 @@ class MCImage:
                         block_id="minecraft:air",
                     )
                 )
+
+        for x, y, z in self._water_blockers:
+            self._commands.append(
+                SETBLOCK_TEMPLATE.format(
+                    x=x - MAP_OFFSET,
+                    y=y + BASE_HEIGHT,
+                    z=z - MAP_OFFSET,
+                    block_id="minecraft:glass",
+                )
+            )
 
         print("done")
 
@@ -245,7 +276,6 @@ class MCImage:
     def process(self):
         self._process_image()
         self._process_pixels()
-        self._normalize_columns()
         self._prepare_commands()
         self._export_datapack()
 
