@@ -84,8 +84,6 @@ COLORS = {
     "black_terracotta": ((26, 15, 11), (31, 18, 13), (37, 22, 16)),
 }
 
-COLOR_WEIGHTS = (0.47, 0.29, 0.24, 0.45)
-
 
 class ColorCache:
     """
@@ -174,30 +172,11 @@ def get_distance(target_color: Color, compare_color: Color) -> float:
 
     Both colors are a tuple of three integers, each a component of RGB, 0 to 255.
 
-    Colors are converted to HSV using colorsys, and their distance is calculated
-    as the square root of a weighted sum of the differences
+    Their distance is calculated as the square root of the sum of the differences
     of the squares of each color component
     """
 
-    def wraparound_hue(hue):
-        return hue - 1 if hue > 0.5 else hue
-
-    target_hsv = colorsys.rgb_to_hsv(*[v / 255 for v in target_color])
-    compare_hsv = colorsys.rgb_to_hsv(*[v / 255 for v in compare_color])
-
-    hue_diff = (
-        target_hsv[1] * target_hsv[2]
-        * (wraparound_hue(compare_hsv[0]) - wraparound_hue(target_hsv[0])) ** 2
-    )
-    sat_diff = (1 - target_hsv[1]) * (compare_hsv[1] - target_hsv[1]) ** 2
-    val_diff = (compare_hsv[2] - target_hsv[2]) ** 2
-    rgb_diff = (
-        sum(((v2 - v1) / 255) for v1, v2 in zip(compare_color, target_color)) ** 2
-    )
-
-    return sum(
-        w * v for v, w in zip((hue_diff, sat_diff, val_diff, rgb_diff), COLOR_WEIGHTS)
-    )
+    return sum((v2 - v1) ** 2 for v1, v2 in zip(target_color, compare_color))
 
 
 def get_block(color: Color, cache: ColorCache) -> Tuple[str, int]:
