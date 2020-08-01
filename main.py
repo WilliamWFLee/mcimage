@@ -35,7 +35,7 @@ from color import process_pixels
 
 IMAGE_SIZE = 128
 MAP_OFFSET = 64
-BASE_HEIGHT = 10
+BASE_HEIGHT = 1
 
 SETBLOCK_TEMPLATE = "setblock {x} {y} {z} {block_id}\n"
 FILL_TEMPLATE = "fill {x1} {y1} {z1} {x2} {y2} {z2} {block_id}\n"
