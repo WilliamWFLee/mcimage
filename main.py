@@ -33,9 +33,10 @@ from PIL import Image, UnidentifiedImageError
 
 from color import ColorProcessor
 
-IMAGE_SIZE = 128
+MAP_SIZE = 128
 MAP_OFFSET = 64
 BASE_HEIGHT = 1
+DEFAULT_MAX_COMMAND_CHAIN_LENGTH = 65536
 
 SETBLOCK_TEMPLATE = "setblock {x} {y} {z} {block_id}\n"
 FILL_TEMPLATE = "fill {x1} {y1} {z1} {x2} {y2} {z2} {block_id}\n"
@@ -82,12 +83,18 @@ def parse_args() -> Tuple[argparse.ArgumentParser, argparse.Namespace]:
 
 class MCImage:
     def __init__(
-        self, filename: str, dp_name: str, dp_dir: str, parser: argparse.ArgumentParser
+        self,
+        filename: str,
+        size: str,
+        dp_name: str,
+        dp_dir: str,
+        parser: argparse.ArgumentParser,
     ):
         self.filename = filename
         self.dp_name = dp_name
         self.dp_dir = dp_dir
         self.parser = parser
+        self._image_size = MAP_SIZE * size
 
     def _normalize_columns(self):
         """
@@ -95,9 +102,9 @@ class MCImage:
         such that the lowest block is at the zero level
         """
         print("Normalizing height in each column... ", end="")
-        for x in range(IMAGE_SIZE):
-            min_y = min(self.blocks[z][x][1] for z in range(-1, IMAGE_SIZE))
-            for z in range(-1, IMAGE_SIZE):
+        for x in range(self._image_size):
+            min_y = min(self.blocks[z][x][1] for z in range(-1, self._image_size))
+            for z in range(-1, self._image_size):
                 self.blocks[z][x] = (self.blocks[z][x][0], self.blocks[z][x][1] - min_y)
 
         print("done")
@@ -116,8 +123,10 @@ class MCImage:
             x, y = ((c - square_width) / 2 for c in self.im.size)
             self.im = self.im.crop((x, y, x + square_width, y + square_width))
 
-        print(f"Scaling to {2 * (IMAGE_SIZE,)}")
-        self.im.thumbnail(2 * (IMAGE_SIZE,), resample=Image.LANCZOS, reducing_gap=3.0)
+        print(f"Scaling to {2 * (self._image_size,)}")
+        self.im.thumbnail(
+            2 * (self._image_size,), resample=Image.LANCZOS, reducing_gap=3.0
+        )
         self.pixels = np.array(self.im)
 
     def _process_pixels(self):
@@ -128,33 +137,36 @@ class MCImage:
         Prepares commands from the given blocks
         """
         print("Preparing commands... ", end="")
-        image_size = len(self.blocks[0])
-        block_commands = ""
-        for z in range(-1, image_size):
-            for x in range(image_size):
-                block_id, y = self.blocks[z + 1][x]
-                block_commands += SETBLOCK_TEMPLATE.format(
-                    x=x - MAP_OFFSET,
-                    y=y + BASE_HEIGHT,
-                    z=z - MAP_OFFSET,
-                    block_id=f"minecraft:{block_id}",
+
+        self._commands = ["gamemode creative @s\n", "tp @s 0 150 0\n"]
+
+        # Air fill commands
+        for z in range(-1, self._image_size):
+            for y in range(BASE_HEIGHT, 256):
+                self._commands.append(
+                    FILL_TEMPLATE.format(
+                        x1=-MAP_OFFSET,
+                        y1=y,
+                        z1=-MAP_OFFSET + z,
+                        x2=self._image_size - MAP_OFFSET - 1,
+                        y2=y,
+                        z2=-MAP_OFFSET + z,
+                        block_id="minecraft:air",
+                    )
                 )
 
-        air_fill_commands = "".join(
-            FILL_TEMPLATE.format(
-                x1=-MAP_OFFSET,
-                y1=y,
-                z1=-MAP_OFFSET - 1,
-                x2=image_size - MAP_OFFSET - 1,
-                y2=y,
-                z2=image_size - MAP_OFFSET - 1,
-                block_id="minecraft:air",
-            )
-            for y in range(BASE_HEIGHT, 256)
-        )
-        self._commands = (
-            f"gamemode creative @s\ntp @s 0 150 0\n{air_fill_commands}{block_commands}"
-        )
+        # Set block commands
+        for z in range(-1, self._image_size):
+            for x in range(self._image_size):
+                block_id, y = self.blocks[z + 1][x]
+                self._commands.append(
+                    SETBLOCK_TEMPLATE.format(
+                        x=x - MAP_OFFSET,
+                        y=y + BASE_HEIGHT,
+                        z=z - MAP_OFFSET,
+                        block_id=f"minecraft:{block_id}",
+                    )
+                )
 
         print("done")
 
@@ -169,7 +181,7 @@ class MCImage:
 
         namespace = self._namespace_from_filename(self.filename)
 
-        print("Exporting commands to datapack... ", end="")
+        print("Exporting commands to datapack... ")
         datapack_dir = os.path.join(self.dp_dir, self.dp_name)
         functions_dir = os.path.join(datapack_dir, "data", namespace, "functions")
 
@@ -183,11 +195,28 @@ class MCImage:
             }
             json.dump(metadata, f)
 
-        with open(os.path.join(functions_dir, "draw.mcfunction"), "w") as f:
-            f.write(self._commands)
-        print("done")
+        if len(self._commands) > DEFAULT_MAX_COMMAND_CHAIN_LENGTH:
+            print(
+                "WARNING: Number of commands greater than default command chain length"
+            )
+            print("WARNING: Function will be be split into several subfunctions")
+            print("WARNING: Run each of these to draw the full image")
+            for n, commands in enumerate(
+                self._commands[i : i + DEFAULT_MAX_COMMAND_CHAIN_LENGTH]
+                for i in range(0, len(self._commands), DEFAULT_MAX_COMMAND_CHAIN_LENGTH)
+            ):
+                with open(
+                    os.path.join(functions_dir, f"draw_{n}.mcfunction"), "w"
+                ) as f:
+                    f.write("".join(commands))
+            print(
+                "Function names will be",
+                ", ".join(f"{namespace}:draw_{i}" for i in range(n + 1)),
+            )
+        else:
+            with open(os.path.join(functions_dir, "draw.mcfunction"), "w") as f:
+                f.write("".join(self._commands))
         print(f"Datapack exported as directory {datapack_dir}")
-        print(f"Function name will be {namespace}:draw")
 
     @staticmethod
     def _namespace_from_filename(filename: str):
@@ -222,8 +251,9 @@ class MCImage:
 
 def main():
     parser, args = parse_args()
-
-    mcimage = MCImage(args.filename, args.datapack_name, args.datapack_dir, parser)
+    mcimage = MCImage(
+        args.filename, args.size, args.datapack_name, args.datapack_dir, parser
+    )
     mcimage.process()
 
 
