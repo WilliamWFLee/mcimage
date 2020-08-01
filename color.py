@@ -95,27 +95,25 @@ class ColorCache:
     def __init__(self):
         self._cache = {}
 
+    def _update_cache(self, cache_dict):
+        # Loads color cache, and updates to cache_dict
+        if os.path.exists(self._CACHE_FILENAME):
+            with open(self._CACHE_FILENAME, "rb") as f:
+                self._cache.update(pickle.load(f))
+
     def open(self):
         """
         Opens the color cache from file
         """
-        print(f"Looking for color cache in {self._CACHE_FILENAME}... ")
-        if os.path.exists(self._CACHE_FILENAME):
-            print("Color cache found, loading... ", end="")
-            with open(self._CACHE_FILENAME, "rb") as f:
-                self._cache.update(pickle.load(f))
-            print("done.")
-        else:
-            print("Color cache wasn't found, image processing may take longer")
+        self._update_cache(self._cache)
 
-    def close(self):
+    def save(self):
         """
-        Saves and closes the color cache
+        Updates and saves the cache to file
         """
-        print("Saving color cache... ", end="")
+        self._update_cache(self._cache)
         with open(self._CACHE_FILENAME, "wb") as f:
             pickle.dump(self._cache, f)
-        print("done")
 
     def find(self, color: Color) -> Tuple[str, int]:
         """
@@ -148,7 +146,7 @@ class ColorCache:
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        self.close()
+        self.save()
 
     def __iter__(self):
         return iter(self._cache)
