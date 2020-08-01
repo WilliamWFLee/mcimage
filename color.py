@@ -163,51 +163,53 @@ class ColorCache:
         return color
 
 
-def get_distance(target_color: Color, compare_color: Color) -> float:
-    """
-    Gets the distance of one color from the other.
+class ColorProcessor:
+    @staticmethod
+    def get_distance(target_color: Color, compare_color: Color) -> float:
+        """
+        Gets the distance of one color from the other.
 
-    Both colors are a tuple of three integers, each a component of RGB, 0 to 255.
+        Both colors are a tuple of three integers, each a component of RGB, 0 to 255.
 
-    Their distance is calculated as the square root of the sum of the differences
-    of the squares of each color component
-    """
+        Their distance is calculated as the square root of the sum of the differences
+        of the squares of each color component
+        """
 
-    return sum((v2 - v1) ** 2 for v1, v2 in zip(target_color, compare_color))
+        return sum((v2 - v1) ** 2 for v1, v2 in zip(target_color, compare_color))
 
+    @classmethod
+    def get_block(cls, color: Color, cache: ColorCache) -> Tuple[str, int]:
+        if color in cache:
+            return cache[color]
+        closest_block_id = None
+        height_diff = None
+        closest_distance = None
+        for block_id, colors in COLORS.items():
+            for n, c in enumerate(colors):
+                distance = cls.get_distance(color, c)
+                if closest_block_id is None or distance < closest_distance:
+                    closest_block_id = block_id
+                    height_diff = n - 1
+                    closest_distance = distance
 
-def get_block(color: Color, cache: ColorCache) -> Tuple[str, int]:
-    if color in cache:
-        return cache[color]
-    closest_block_id = None
-    height_diff = None
-    closest_distance = None
-    for block_id, colors in COLORS.items():
-        for n, c in enumerate(colors):
-            distance = get_distance(color, c)
-            if closest_block_id is None or distance < closest_distance:
-                closest_block_id = block_id
-                height_diff = n - 1
-                closest_distance = distance
+        cache[color] = (closest_block_id, height_diff)
+        return (closest_block_id, height_diff)
 
-    cache[color] = (closest_block_id, height_diff)
-    return (closest_block_id, height_diff)
+    @classmethod
+    def process_pixels(cls, pixels: Sequence[Sequence[int]]) -> List[List[Tuple[str, int]]]:
+        image_size = len(pixels)
+        # Process pixels into blocks and coordinates
+        blocks = [[("stone", 0) for x in range(image_size)]]
+        with ColorCache() as cache:
+            for z in range(image_size):
+                print(f"Determining blocks... row {z+1}/{image_size}", end="\r")
+                row = []
+                for x in range(image_size):
+                    pixel_color = tuple(pixels[z][x])
+                    block_id, height_diff = cls.get_block(pixel_color, cache)
+                    block = (block_id, blocks[z][x][1] + height_diff)
+                    row += [block]
+                blocks += [row]
+            print()
 
-
-def process_pixels(pixels: Sequence[Sequence[int]]) -> List[List[Tuple[str, int]]]:
-    image_size = len(pixels)
-    # Process pixels into blocks and coordinates
-    blocks = [[("stone", 0) for x in range(image_size)]]
-    with ColorCache() as cache:
-        for z in range(image_size):
-            print(f"Determining blocks... row {z+1}/{image_size}", end="\r")
-            row = []
-            for x in range(image_size):
-                pixel_color = tuple(pixels[z][x])
-                block_id, height_diff = get_block(pixel_color, cache)
-                block = (block_id, blocks[z][x][1] + height_diff)
-                row += [block]
-            blocks += [row]
-        print()
-
-    return blocks
+        return blocks

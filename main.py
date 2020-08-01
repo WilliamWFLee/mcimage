@@ -26,12 +26,12 @@ SOFTWARE
 import argparse
 import json
 import os
-from typing import Sequence, Tuple
+from typing import Tuple
 
 import numpy as np
 from PIL import Image, UnidentifiedImageError
 
-from color import process_pixels
+from color import ColorProcessor
 
 IMAGE_SIZE = 128
 MAP_OFFSET = 64
@@ -79,147 +79,151 @@ def parse_args() -> Tuple[argparse.ArgumentParser, argparse.Namespace]:
     return parser, args
 
 
-def normalize_columns(blocks):
-    """
-    Normalizes the height of blocks in the column
-    such that the lowest block is at the zero level
-    """
-    print("Normalizing height in each column... ", end="")
-    for x in range(IMAGE_SIZE):
-        min_y = min(blocks[z][x][1] for z in range(-1, IMAGE_SIZE))
-        for z in range(-1, IMAGE_SIZE):
-            blocks[z][x] = (blocks[z][x][0], blocks[z][x][1] - min_y)
+class MCImage:
+    def __init__(
+        self, filename: str, dp_name: str, dp_dir: str, parser: argparse.ArgumentParser
+    ):
+        self.filename = filename
+        self.dp_name = dp_name
+        self.dp_dir = dp_dir
+        self.parser = parser
 
-    print("done")
+    def _normalize_columns(self):
+        """
+        Normalizes the height of blocks in the column
+        such that the lowest block is at the zero level
+        """
+        print("Normalizing height in each column... ", end="")
+        for x in range(IMAGE_SIZE):
+            min_y = min(self.blocks[z][x][1] for z in range(-1, IMAGE_SIZE))
+            for z in range(-1, IMAGE_SIZE):
+                self.blocks[z][x] = (self.blocks[z][x][0], self.blocks[z][x][1] - min_y)
 
+        print("done")
 
-def process_image(im: Image.Image):
-    """
-    Scales and processes the image to an array of pixels
-    """
-    print("Processing image...")
-    print(f"Size of image is {im.size}")
-    if im.size[0] != im.size[1]:
-        print("Image size is not square")
-        print("Image will be cropped to largest centered square possible")
-        square_width = min(im.size)
-        x, y = ((c - square_width) / 2 for c in im.size)
-        im = im.crop((x, y, x + square_width, y + square_width))
+    def _process_image(self):
+        """
+        Scales and processes the image to an array of pixels
+        """
+        print("Processing image...")
+        self._open_image()
+        print(f"Size of image is {self.im.size}")
+        if self.im.size[0] != self.im.size[1]:
+            print("Image size is not square")
+            print("Image will be cropped to largest centered square possible")
+            square_width = min(self.im.size)
+            x, y = ((c - square_width) / 2 for c in self.im.size)
+            self.im = self.im.crop((x, y, x + square_width, y + square_width))
 
-    print(f"Scaling to {2 * (IMAGE_SIZE,)}")
-    im.thumbnail(2 * (IMAGE_SIZE,), resample=Image.LANCZOS, reducing_gap=3.0)
+        print(f"Scaling to {2 * (IMAGE_SIZE,)}")
+        self.im.thumbnail(2 * (IMAGE_SIZE,), resample=Image.LANCZOS, reducing_gap=3.0)
+        self.pixels = np.array(self.im)
 
-    return np.array(im)
+    def _process_pixels(self):
+        self.blocks = ColorProcessor.process_pixels(self.pixels)
 
+    def _prepare_commands(self) -> str:
+        """
+        Prepares commands from the given blocks
+        """
+        print("Preparing commands... ", end="")
+        image_size = len(self.blocks[0])
+        block_commands = ""
+        for z in range(-1, image_size):
+            for x in range(image_size):
+                block_id, y = self.blocks[z + 1][x]
+                block_commands += SETBLOCK_TEMPLATE.format(
+                    x=x - MAP_OFFSET,
+                    y=y + BASE_HEIGHT,
+                    z=z - MAP_OFFSET,
+                    block_id=f"minecraft:{block_id}",
+                )
 
-def prepare_commands(blocks: Sequence[Sequence[Tuple[str, int]]]) -> str:
-    """
-    Prepares commands from the given blocks
-    """
-    print("Preparing commands... ", end="")
-    image_size = len(blocks[0])
-    block_commands = ""
-    for z in range(-1, image_size):
-        for x in range(image_size):
-            block_id, y = blocks[z + 1][x]
-            block_commands += SETBLOCK_TEMPLATE.format(
-                x=x - MAP_OFFSET,
-                y=y + BASE_HEIGHT,
-                z=z - MAP_OFFSET,
-                block_id=f"minecraft:{block_id}",
+        air_fill_commands = "".join(
+            FILL_TEMPLATE.format(
+                x1=-MAP_OFFSET,
+                y1=y,
+                z1=-MAP_OFFSET - 1,
+                x2=image_size - MAP_OFFSET - 1,
+                y2=y,
+                z2=image_size - MAP_OFFSET - 1,
+                block_id="minecraft:air",
             )
-
-    air_fill_commands = "".join(
-        FILL_TEMPLATE.format(
-            x1=-MAP_OFFSET,
-            y1=y,
-            z1=-MAP_OFFSET - 1,
-            x2=image_size - MAP_OFFSET - 1,
-            y2=y,
-            z2=image_size - MAP_OFFSET - 1,
-            block_id="minecraft:air",
+            for y in range(BASE_HEIGHT, 256)
         )
-        for y in range(BASE_HEIGHT, 256)
-    )
-    text = f"gamemode creative @s\ntp @s 0 150 0\n{air_fill_commands}{block_commands}"
+        self._commands = (
+            f"gamemode creative @s\ntp @s 0 150 0\n{air_fill_commands}{block_commands}"
+        )
 
-    print("done")
-    return text
+        print("done")
 
+    def _export_datapack(self):
+        """
+        Exports a datapack which the function text
 
-def process_image_to_commands(im: Image.Image) -> str:
-    """
-    Processes an image opened in Pillow to commands
-    """
-    pixels = process_image(im)
-    blocks = process_pixels(pixels)
-    normalize_columns(blocks)
-    text = prepare_commands(blocks)
+        The function is saved in a datapack under ``name``.
 
-    return text
+        The function to draw the image is namespaced under ``namespace``
+        """
 
+        namespace = self._namespace_from_filename(self.filename)
 
-def export_datapack(commands: str, name: str, directory: str, namespace: str):
-    """
-    Exports a datapack which the function text
+        print("Exporting commands to datapack... ", end="")
+        datapack_dir = os.path.join(self.dp_dir, self.dp_name)
+        functions_dir = os.path.join(datapack_dir, "data", namespace, "functions")
 
-    The function is saved in a datapack under ``name``.
-
-    The function to draw the image is namespaced under ``namespace``
-    """
-
-    print("Exporting commands to datapack... ", end="")
-    datapack_dir = os.path.join(directory, name)
-    functions_dir = os.path.join(datapack_dir, "data", namespace, "functions")
-
-    os.makedirs(functions_dir, exist_ok=True)
-    with open(os.path.join(datapack_dir, "pack.mcmeta"), "w") as f:
-        metadata = {
-            "pack": {
-                "pack_format": 5,
-                "description": "Draw images in Minecraft with map pixel art",
+        os.makedirs(functions_dir, exist_ok=True)
+        with open(os.path.join(datapack_dir, "pack.mcmeta"), "w") as f:
+            metadata = {
+                "pack": {
+                    "pack_format": 5,
+                    "description": "Draw images in Minecraft with map pixel art",
+                }
             }
-        }
-        json.dump(metadata, f)
+            json.dump(metadata, f)
 
-    with open(os.path.join(functions_dir, "draw.mcfunction"), "w") as f:
-        f.write(commands)
-    print("done")
-    print(f"Datapack exported as directory {datapack_dir}")
-    print(f"Function name will be {namespace}:draw")
+        with open(os.path.join(functions_dir, "draw.mcfunction"), "w") as f:
+            f.write(self._commands)
+        print("done")
+        print(f"Datapack exported as directory {datapack_dir}")
+        print(f"Function name will be {namespace}:draw")
 
+    @staticmethod
+    def _namespace_from_filename(filename: str):
+        """
+        Generates a namespace from a filename
 
-def namespace_from_filename(img_filename: str):
-    """
-    Generates a namespace from a filename
+        Namespace is the filename, stripped of extension, lowercased
+        and all non-alphanumeric characters replaced with underscores
+        """
+        namespace = "".join(
+            c.lower() if c.isalnum() else "_"
+            for c in os.path.basename(filename).rsplit(".", maxsplit=1)[0]
+        )
 
-    Namespace is the filename, stripped of extension, lowercased
-    and all non-alphanumeric characters replaced with underscores
-    """
-    namespace = "".join(
-        c.lower() if c.isalnum() else "_"
-        for c in os.path.basename(img_filename).rsplit(".", maxsplit=1)[0]
-    )
+        return namespace
 
-    return namespace
+    def _open_image(self):
+        try:
+            self.im = Image.open(self.filename).convert("RGB")
+        except UnidentifiedImageError:
+            self.parser.error(f"{self.filename} is not an image file")
+        except FileNotFoundError:
+            self.parser.error(f"{self.filename} was not found")
+
+    def process(self):
+        self._process_image()
+        self._process_pixels()
+        self._normalize_columns()
+        self._prepare_commands()
+        self._export_datapack()
 
 
 def main():
     parser, args = parse_args()
-    try:
-        im = Image.open(args.filename).convert("RGB")
-    except UnidentifiedImageError:
-        parser.error(f"{args.filename} is not an image file")
-    except FileNotFoundError:
-        parser.error(f"{args.filename} was not found")
 
-    commands = process_image_to_commands(im)
-    export_datapack(
-        commands,
-        args.datapack_name,
-        args.datapack_dir,
-        namespace_from_filename(args.filename),
-    )
+    mcimage = MCImage(args.filename, args.datapack_name, args.datapack_dir, parser)
+    mcimage.process()
 
 
 if __name__ == "__main__":
