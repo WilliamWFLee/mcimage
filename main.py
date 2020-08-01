@@ -216,6 +216,7 @@ class MCImage:
         else:
             with open(os.path.join(functions_dir, "draw.mcfunction"), "w") as f:
                 f.write("".join(self._commands))
+            print(f"Function name will be {namespace}:draw")
         print(f"Datapack exported as directory {datapack_dir}")
 
     @staticmethod
