@@ -66,6 +66,13 @@ def parse_args() -> Tuple[argparse.ArgumentParser, argparse.Namespace]:
         dest="namespace",
         help="Namespace of the function. Defaults to be being derived from filename",
     )
+    parser.add_argument(
+        "--size",
+        metavar="size",
+        nargs=2,
+        help="Size of image to scale to, 1 for 128x128 (default), 2 for 256x256",
+        choices=(1, 2),
+    )
     parser.add_argument("filename")
 
     args = parser.parse_args()
