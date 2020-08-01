@@ -116,16 +116,21 @@ class MCImage:
         print("Processing image...")
         self._open_image()
         print(f"Size of image is {self.im.size}")
+
+        not_square = False
         if self.im.size[0] != self.im.size[1]:
             print("Image size is not square")
             print("Image will be cropped to largest centered square possible")
             square_width = min(self.im.size)
+            not_square = True
             x, y = ((c - square_width) / 2 for c in self.im.size)
-            self.im = self.im.crop((x, y, x + square_width, y + square_width))
 
         print(f"Scaling to {2 * (self._image_size,)}")
-        self.im.thumbnail(
-            2 * (self._image_size,), resample=Image.LANCZOS, reducing_gap=3.0
+        self.im = self.im.resize(
+            2 * (self._image_size,),
+            resample=Image.LANCZOS,
+            box=(x, y, x + square_width, y + square_width) if not_square else None,
+            reducing_gap=3.0,
         )
         self.pixels = np.array(self.im)
 
