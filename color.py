@@ -23,7 +23,6 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE
 """
 
-import colorsys
 import os
 import pickle
 from typing import List, Sequence, Tuple
