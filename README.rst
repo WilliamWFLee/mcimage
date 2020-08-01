@@ -51,7 +51,9 @@ Using the function in Minecraft
 By default, a ``datapacks`` folder is generated, containing a folder called ``mcimage``. 
 The ``mcimage`` folder is a datapack, and contains the function required to draw the image using Minecraft blocks.
 
-In order to use the datapack, you can add the datapack to an existing world by copying and pasting it into the world's ``datapacks`` directory.
+In order to use the datapack, cheats must be enabled. 
+
+You can add the datapack to an existing cheats-enabled world by copying and pasting it into the world's ``datapacks`` directory.
 This is found at ``<minecraft_dir>/saves/<world>/datapacks``, where ``<minecraft_dir>`` is the install location of Minecraft, 
 and ``<world>`` is the name of your world.
 
@@ -66,6 +68,7 @@ It is lowercased, stripped of its extension, and then all non-alphabetic charact
 
 For example, if the image filename is ``Dark Side of The Moon.jpeg``, then the namespace is ``dark_side_of_the_moon``.
 The function consists of the namespace, followed by a colon, followed by ``draw``. So for the above example, the command to draw would be ``/function dark_side_of_the_moon:draw``.
+For larger scale iamges, the function may be split into several sub-functions, so for example ``dark_side_of_the_moon:draw_0``, ``dark_side_of_the_moon:draw_1``, etc.
 
 The command teleports you to ``0 150 0`` and changes your gamemode to creative. Draw on an empty map to view the image.
 
