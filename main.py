@@ -156,9 +156,9 @@ def export_datapack(commands: str, name: str, directory: str, namespace: str):
     """
     Exports a datapack which the function text
 
-    The function is saved in a datapack called mcimage.
+    The function is saved in a datapack under ``name``.
 
-    The function to draw the image is namespaced under the provided namespace
+    The function to draw the image is namespaced under ``namespace``
     """
 
     print("Exporting commands to datapack... ", end="")
