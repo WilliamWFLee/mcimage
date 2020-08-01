@@ -140,22 +140,6 @@ class MCImage:
 
         self._commands = ["gamemode creative @s\n", "tp @s 0 150 0\n"]
 
-        # Air fill commands
-        for z in range(-1, self._image_size):
-            for y in range(BASE_HEIGHT, 256):
-                self._commands.append(
-                    FILL_TEMPLATE.format(
-                        x1=-MAP_OFFSET,
-                        y1=y,
-                        z1=-MAP_OFFSET + z,
-                        x2=self._image_size - MAP_OFFSET - 1,
-                        y2=y,
-                        z2=-MAP_OFFSET + z,
-                        block_id="minecraft:air",
-                    )
-                )
-
-        # Set block commands
         for z in range(-1, self._image_size):
             for x in range(self._image_size):
                 block_id, y = self.blocks[z + 1][x]
@@ -165,6 +149,17 @@ class MCImage:
                         y=y + BASE_HEIGHT,
                         z=z - MAP_OFFSET,
                         block_id=f"minecraft:{block_id}",
+                    )
+                )
+                self._commands.append(
+                    FILL_TEMPLATE.format(
+                        x1=x - MAP_OFFSET,
+                        y1=y + BASE_HEIGHT + 1,
+                        z1=-MAP_OFFSET + z,
+                        x2=self._image_size - MAP_OFFSET - 1,
+                        y2=255,
+                        z2=z - MAP_OFFSET,
+                        block_id="minecraft:air",
                     )
                 )
 
