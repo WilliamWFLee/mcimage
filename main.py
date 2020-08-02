@@ -166,7 +166,7 @@ class MCImage:
         """
         print("Preparing commands... ", end="")
 
-        self._commands = ["tell @s Placing blocks, please be patient..."]
+        self._commands = ["tell @p Placing blocks, please be patient...\n"]
         for z in range(-1, self._image_size):
             for x in range(self._image_size):
                 block_id, y = self.blocks[z + 1][x]
