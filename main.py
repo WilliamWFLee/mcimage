@@ -40,8 +40,8 @@ COMMANDS_PER_FUNCTION = 65536
 COMMAND_BLOCK_POS = (-75, 80, -64)
 VIEWING_PLATFORM_RADIUS = 5
 
-SETBLOCK_TEMPLATE = "setblock {x} {y} {z} {block_id} replace\n"
-FILL_TEMPLATE = "fill {x1} {y1} {z1} {x2} {y2} {z2} {block_id}\n"
+SETBLOCK_TEMPLATE = "setblock {x} {y} {z} minecraft:{block_id} replace\n"
+FILL_TEMPLATE = "fill {x1} {y1} {z1} {x2} {y2} {z2} minecraft:{block_id}\n"
 
 
 def parse_args() -> Tuple[argparse.ArgumentParser, argparse.Namespace]:
@@ -179,7 +179,7 @@ class MCImage:
                         x=x - MAP_OFFSET,
                         y=y + BASE_HEIGHT,
                         z=z - MAP_OFFSET,
-                        block_id=f"minecraft:{block_id}",
+                        block_id=block_id,
                     )
                 )
                 self._commands.append(
@@ -190,7 +190,7 @@ class MCImage:
                         x2=x - MAP_OFFSET,
                         y2=255,
                         z2=z - MAP_OFFSET,
-                        block_id="minecraft:air",
+                        block_id="air",
                     )
                 )
 
@@ -200,7 +200,7 @@ class MCImage:
                     x=x - MAP_OFFSET,
                     y=y + BASE_HEIGHT,
                     z=z - MAP_OFFSET,
-                    block_id="minecraft:glass",
+                    block_id="glass",
                 )
             )
 
@@ -246,13 +246,11 @@ class MCImage:
                     x2=COMMAND_BLOCK_POS[0] - 1,
                     y2=COMMAND_BLOCK_POS[1] + 5,
                     z2=COMMAND_BLOCK_POS[2],
-                    block_id="minecraft:air",
+                    block_id="air",
                 )
             )
             for i in range(n + 1):
-                block_id = "minecraft:" + (
-                    "chain_command_block" if i else "command_block"
-                )
+                block_id = "chain_command_block" if i else "command_block"
                 block_state = "[facing=up]"
                 block_entity_data = (
                     f"{{Command: 'function {namespace}:draw_{i}'"
@@ -273,7 +271,7 @@ class MCImage:
                             x=COMMAND_BLOCK_POS[0] - 1,
                             y=COMMAND_BLOCK_POS[1],
                             z=COMMAND_BLOCK_POS[2] + i,
-                            block_id="minecraft:stone_button[face=wall, facing=west]",
+                            block_id="stone_button[face=wall, facing=west]",
                         )
                     )
             f.write(
@@ -284,7 +282,7 @@ class MCImage:
                     x2=COMMAND_BLOCK_POS[0] - VIEWING_PLATFORM_RADIUS,
                     y2=COMMAND_BLOCK_POS[1] - 1,
                     z2=COMMAND_BLOCK_POS[2] - VIEWING_PLATFORM_RADIUS,
-                    block_id="minecraft:glass",
+                    block_id="glass",
                 )
                 + (
                     "gamemode creative @s\n"
