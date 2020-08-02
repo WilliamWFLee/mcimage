@@ -105,7 +105,11 @@ class MCImage:
         """
         print("Normalizing height in each column... ", end="")
         for x in range(self._image_size):
-            min_y = min(self.blocks[z][x][1] for z in range(-1, self._image_size))
+            min_y = min(
+                self.blocks[z][x][1]
+                for z in range(-1, self._image_size)
+                if self.blocks[z][x][0] != "stone"
+            )
             for z in range(-1, self._image_size):
                 self.blocks[z][x] = (self.blocks[z][x][0], self.blocks[z][x][1] - min_y)
 

@@ -199,7 +199,7 @@ class ColorProcessor:
     def process_pixels(cls, pixels: Sequence[Sequence[int]]) -> List[List[Tuple[str, int]]]:
         image_size = len(pixels)
         # Process pixels into blocks and coordinates
-        blocks = [[("stone", 0) for x in range(image_size)]]
+        blocks = [[("stone", -1) for x in range(image_size)]]
         with ColorCache() as cache:
             for z in range(image_size):
                 print(f"Determining blocks... row {z+1}/{image_size}", end="\r")
