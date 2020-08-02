@@ -36,9 +36,11 @@ from color import ColorProcessor
 MAP_SIZE = 128
 MAP_OFFSET = 64
 BASE_HEIGHT = 1
-COMMANDS_PER_FUNCTION = 10000
+COMMANDS_PER_FUNCTION = 65536
+COMMAND_BLOCK_POS = (-75, 80, -64)
+VIEWING_PLATFORM_RADIUS = 5
 
-SETBLOCK_TEMPLATE = "setblock {x} {y} {z} {block_id}\n"
+SETBLOCK_TEMPLATE = "setblock {x} {y} {z} {block_id} replace\n"
 FILL_TEMPLATE = "fill {x1} {y1} {z1} {x2} {y2} {z2} {block_id}\n"
 
 
@@ -164,7 +166,7 @@ class MCImage:
         """
         print("Preparing commands... ", end="")
 
-        self._commands = []
+        self._commands = ["tell @s Placing blocks, please be patient..."]
         for z in range(-1, self._image_size):
             for x in range(self._image_size):
                 block_id, y = self.blocks[z + 1][x]
@@ -198,7 +200,6 @@ class MCImage:
                 )
             )
 
-        self._commands.extend(["gamemode creative @s\n", "tp @s 0 150 0\n"])
         print("done")
 
     def _export_datapack(self):
@@ -232,8 +233,63 @@ class MCImage:
         ):
             with open(os.path.join(functions_dir, f"draw_{n}.mcfunction"), "w") as f:
                 f.write("".join(commands))
+        with open(os.path.join(functions_dir, "setup.mcfunction"), "w") as f:
+            f.write(
+                FILL_TEMPLATE.format(
+                    x1=COMMAND_BLOCK_POS[0],
+                    y1=COMMAND_BLOCK_POS[1],
+                    z1=COMMAND_BLOCK_POS[2],
+                    x2=COMMAND_BLOCK_POS[0] - 1,
+                    y2=COMMAND_BLOCK_POS[1] + n,
+                    z2=COMMAND_BLOCK_POS[2],
+                    block_id="minecraft:air",
+                )
+            )
+            for i in range(n + 1):
+                block_id = "minecraft:" + (
+                    "chain_command_block" if i else "command_block"
+                )
+                block_state = "[facing=up]"
+                block_entity_data = (
+                    f"{{Command: 'function {namespace}:draw_{i}'"
+                    + (", auto: 1" if i else "")
+                    + "}"
+                )
+                f.write(
+                    SETBLOCK_TEMPLATE.format(
+                        x=COMMAND_BLOCK_POS[0],
+                        y=COMMAND_BLOCK_POS[1] + i,
+                        z=COMMAND_BLOCK_POS[2],
+                        block_id=f"{block_id}{block_state}{block_entity_data}",
+                    )
+                )
+                if not i:
+                    f.write(
+                        SETBLOCK_TEMPLATE.format(
+                            x=COMMAND_BLOCK_POS[0] - 1,
+                            y=COMMAND_BLOCK_POS[1],
+                            z=COMMAND_BLOCK_POS[2] + i,
+                            block_id="minecraft:stone_button[face=wall, facing=west]",
+                        )
+                    )
+            f.write(
+                FILL_TEMPLATE.format(
+                    x1=COMMAND_BLOCK_POS[0] + VIEWING_PLATFORM_RADIUS,
+                    y1=COMMAND_BLOCK_POS[1] - 1,
+                    z1=COMMAND_BLOCK_POS[2] + VIEWING_PLATFORM_RADIUS,
+                    x2=COMMAND_BLOCK_POS[0] - VIEWING_PLATFORM_RADIUS,
+                    y2=COMMAND_BLOCK_POS[1] - 1,
+                    z2=COMMAND_BLOCK_POS[2] - VIEWING_PLATFORM_RADIUS,
+                    block_id="minecraft:glass",
+                )
+                + (
+                    "gamemode creative @s\n"
+                    f"tp @s {COMMAND_BLOCK_POS[0] - 3} {COMMAND_BLOCK_POS[1]} {COMMAND_BLOCK_POS[2]} -90 0\n"
+                )
+            )
 
         print(f"Datapack exported as directory {datapack_dir}")
+        print(f"Setup function is called {namespace}:setup")
 
     @staticmethod
     def _namespace_from_filename(filename: str):
