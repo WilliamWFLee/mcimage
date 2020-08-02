@@ -164,8 +164,7 @@ class MCImage:
         """
         print("Preparing commands... ", end="")
 
-        self._commands = ["gamemode creative @s\n", "tp @s 0 150 0\n"]
-
+        self._commands = []
         for z in range(-1, self._image_size):
             for x in range(self._image_size):
                 block_id, y = self.blocks[z + 1][x]
@@ -199,6 +198,7 @@ class MCImage:
                 )
             )
 
+        self._commands.extend(["gamemode creative @s\n", "tp @s 0 150 0\n"])
         print("done")
 
     def _export_datapack(self):
