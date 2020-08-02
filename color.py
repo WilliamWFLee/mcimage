@@ -23,6 +23,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE
 """
 
+import hashlib
 import os
 import pickle
 from typing import Sequence, Tuple
@@ -93,26 +94,39 @@ class ColorCache:
 
     def __init__(self):
         self._cache = {}
+        self._cache_hash = None
 
-    def _update_cache(self, cache_dict):
+    @staticmethod
+    def _get_file_hash(file):
+        return hashlib.md5(file.read()).hexdigest()
+
+    def _update_cache(self):
         # Loads color cache, and updates to cache_dict
         if os.path.exists(self._CACHE_FILENAME):
             with open(self._CACHE_FILENAME, "rb") as f:
                 self._cache.update(pickle.load(f))
+                self._cache_hash = self._get_file_hash(f)
 
     def open(self):
         """
         Opens the color cache from file
         """
-        self._update_cache(self._cache)
+        self._update_cache()
 
     def save(self):
         """
         Updates and saves the cache to file
         """
-        self._update_cache(self._cache)
-        with open(self._CACHE_FILENAME, "wb") as f:
+        print("Saving color mappings, please wait...")
+        with open(f"{self._CACHE_FILENAME}", "rb") as f:
+            if self._get_file_hash(f) != self._cache_hash:
+                self._update_cache()
+        with open(f"{self._CACHE_FILENAME}-journal", "wb") as f:
             pickle.dump(self._cache, f)
+            f.flush()
+            os.fsync(f.fileno())
+
+        os.rename(f"{self._CACHE_FILENAME}-journal", self._CACHE_FILENAME)
 
     def find(self, color: Color) -> Tuple[str, int]:
         """
