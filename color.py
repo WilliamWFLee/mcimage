@@ -25,7 +25,7 @@ SOFTWARE
 
 import os
 import pickle
-from typing import List, Sequence, Tuple
+from typing import Sequence, Tuple
 
 Color = Sequence[int]
 
@@ -194,22 +194,3 @@ class ColorProcessor:
 
         cache[color] = (closest_block_id, height_diff)
         return (closest_block_id, height_diff)
-
-    @classmethod
-    def process_pixels(cls, pixels: Sequence[Sequence[int]]) -> List[List[Tuple[str, int]]]:
-        image_size = len(pixels)
-        # Process pixels into blocks and coordinates
-        blocks = [[("stone", -1) for x in range(image_size)]]
-        with ColorCache() as cache:
-            for z in range(image_size):
-                print(f"Determining blocks... row {z+1}/{image_size}", end="\r")
-                row = []
-                for x in range(image_size):
-                    pixel_color = tuple(pixels[z][x])
-                    block_id, height_diff = cls.get_block(pixel_color, cache)
-                    block = (block_id, blocks[z][x][1] + height_diff)
-                    row += [block]
-                blocks += [row]
-            print()
-
-        return blocks
