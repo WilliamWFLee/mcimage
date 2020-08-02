@@ -181,8 +181,8 @@ class MCImage:
                     FILL_TEMPLATE.format(
                         x1=x - MAP_OFFSET,
                         y1=y + BASE_HEIGHT + 1,
-                        z1=-MAP_OFFSET + z,
-                        x2=self._image_size - MAP_OFFSET - 1,
+                        z1=z - MAP_OFFSET,
+                        x2=x - MAP_OFFSET,
                         y2=255,
                         z2=z - MAP_OFFSET,
                         block_id="minecraft:air",
