@@ -1,7 +1,7 @@
 mcimage
 ===============
 
-A tool written in Python for producing a Minecraft function file ``.mcfunction`` for map pixel art.
+A tool written in Python for producing Minecraft function files for map pixel art.
 
 Requirements
 ------------
@@ -26,10 +26,10 @@ Or on Windows
 Usage
 -----
 
-Generating the function
-~~~~~~~~~~~~~~~~~~~~~~~
+Generating the functions
+~~~~~~~~~~~~~~~~~~~~~~~~
 
-First, the function file is generated from the image, by doing
+First, function file, or files, is/are generated from the image, by doing
 
 .. code::
 
@@ -43,38 +43,53 @@ Or on Windows
 
 This may take a while!
 
-Use the ``-h`` or ``--help`` flag for customisation options.
+There are also several options you can use.
 
-Using the function in Minecraft
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+- ``-d dir``, where ``dir`` is the path (relative or absolute) of the directory to place generated datapacks.
+- ``-n name``, where ``name`` is the datapack to export, default is ``mcimage``.
+- ``--ns namespace``, where ``namespace`` is the namespace for the functions. By default this is derived from the image filename.
+- ``--size size``, where ``size`` is the size that the image will be scaled to for Minecraft. Possible values are 1 or 2, for 128x128 and 256x256 images respectively.
+
+Using the functions in Minecraft
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 By default, a ``datapacks`` folder is generated, containing a folder called ``mcimage``. 
 The ``mcimage`` folder is a datapack, and contains the function required to draw the image using Minecraft blocks.
 
-In order to use the datapack, cheats must be enabled. 
+In order to use the datapack, cheats **must** be enabled. 
 
-You can add the datapack to an existing cheats-enabled world by copying and pasting it into the world's ``datapacks`` directory.
+It's **highly** recommend that you create a new world to execute the commands. You risk losing blocks that are in the same space as the blocks to be placed by the functions.
+It is also easier to add the datapack in-game to the new world when it is created.
+
+If you wish, you can add the datapack to an existing cheats-enabled world by copying and pasting it into the world's ``datapacks`` directory.
 This is found at ``<minecraft_dir>/saves/<world>/datapacks``, where ``<minecraft_dir>`` is the install location of Minecraft, 
 and ``<world>`` is the name of your world.
 
-Datapacks are enabled when the world is first loaded, but for loaded worlds, you must execute the ``/reload`` command first.
+Datapacks are enabled by default when you open a world, but for worlds that you have already opened, you must execute the ``/reload`` command first.
 
-Alternatively, you can add the datapack in-game when you create a new world.
+**Superflat worlds are recommended.**
 
-Superflat worlds are recommended.
-
-The function name is a namespaced function. The namespace is derived from the image filename. 
-It is lowercased, stripped of its extension, and then all non-alphabetic characters are replaced with underscores.
+Functions have a *namespace*. The namespace is derived from the image filename. 
+The image filename is lowercased, stripped of its extension, and then all non-alphabetic characters are replaced with underscores.
 
 For example, if the image filename is ``Dark Side of The Moon.jpeg``, then the namespace is ``dark_side_of_the_moon``.
-The function consists of the namespace, followed by a colon, followed by ``draw``. So for the above example, the command to draw would be ``/function dark_side_of_the_moon:draw``.
-For larger scale iamges, the function may be split into several sub-functions, so for example ``dark_side_of_the_moon:draw_0``, ``dark_side_of_the_moon:draw_1``, etc.
 
-The command teleports you to ``0 150 0`` and changes your gamemode to creative. Draw on an empty map to view the image.
+The main function that you'll need to use is the ``setup`` function. So for the above example namespace, run the command ``/function dark_side_of_the_moon:setup``.
+This will teleport you to a "viewing platform" with some command blocks. Run the command blocks to draw the image using the button.
 
 The commands may take a while to execute and render. Be patient!
 
-For more information, check the Minecraft Wiki's page on datapacks_ and the `function command`_.
+For more information on using the datapack, check the Minecraft Wiki's page on datapacks_ and the `function command`_.
+
+Getting the image onto a map (or maps)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The blocks are placed in the world such that the top-left corner of the image is aligned with the top-left corner of a map drawn within the image. 
+
+- For 128x128 images, create a new map within somewhere within the space between the boundaries of the blocks placed.
+- For 256x256 images, create four new maps, one in each quadrant of the blocks placed.
+
+For a 128x128 image, you can view the map whilst you have selected it in your inventory hotbar, but image maps are best viewed in item frames.
 
 License
 -------
