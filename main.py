@@ -36,7 +36,7 @@ from color import ColorProcessor
 MAP_SIZE = 128
 MAP_OFFSET = 64
 BASE_HEIGHT = 1
-DEFAULT_MAX_COMMAND_CHAIN_LENGTH = 65536
+COMMANDS_PER_FUNCTION = 10000
 
 SETBLOCK_TEMPLATE = "setblock {x} {y} {z} {block_id}\n"
 FILL_TEMPLATE = "fill {x1} {y1} {z1} {x2} {y2} {z2} {block_id}\n"
@@ -226,28 +226,13 @@ class MCImage:
             }
             json.dump(metadata, f)
 
-        if len(self._commands) > DEFAULT_MAX_COMMAND_CHAIN_LENGTH:
-            print(
-                "WARNING: Number of commands greater than default command chain length"
-            )
-            print("WARNING: Function will be be split into several subfunctions")
-            print("WARNING: Run each of these to draw the full image")
-            for n, commands in enumerate(
-                self._commands[i : i + DEFAULT_MAX_COMMAND_CHAIN_LENGTH]
-                for i in range(0, len(self._commands), DEFAULT_MAX_COMMAND_CHAIN_LENGTH)
-            ):
-                with open(
-                    os.path.join(functions_dir, f"draw_{n}.mcfunction"), "w"
-                ) as f:
-                    f.write("".join(commands))
-            print(
-                "Function names will be",
-                ", ".join(f"{namespace}:draw_{i}" for i in range(n + 1)),
-            )
-        else:
-            with open(os.path.join(functions_dir, "draw.mcfunction"), "w") as f:
-                f.write("".join(self._commands))
-            print(f"Function name will be {namespace}:draw")
+        for n, commands in enumerate(
+            self._commands[i : i + COMMANDS_PER_FUNCTION]
+            for i in range(0, len(self._commands), COMMANDS_PER_FUNCTION)
+        ):
+            with open(os.path.join(functions_dir, f"draw_{n}.mcfunction"), "w") as f:
+                f.write("".join(commands))
+
         print(f"Datapack exported as directory {datapack_dir}")
 
     @staticmethod
