@@ -240,7 +240,7 @@ class MCImage:
                     y1=COMMAND_BLOCK_POS[1],
                     z1=COMMAND_BLOCK_POS[2],
                     x2=COMMAND_BLOCK_POS[0] - 1,
-                    y2=COMMAND_BLOCK_POS[1] + n,
+                    y2=COMMAND_BLOCK_POS[1] + 5,
                     z2=COMMAND_BLOCK_POS[2],
                     block_id="minecraft:air",
                 )
