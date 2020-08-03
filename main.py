@@ -40,8 +40,8 @@ COMMANDS_PER_FUNCTION = 65536
 COMMAND_BLOCK_POS = (-75, 80, -64)
 VIEWING_PLATFORM_RADIUS = 5
 
-SETBLOCK_TEMPLATE = "setblock {x} {y} {z} minecraft:{block_id} replace\n"
-FILL_TEMPLATE = "fill {x1} {y1} {z1} {x2} {y2} {z2} minecraft:{block_id}\n"
+SETBLOCK_TEMPLATE = "setblock {} {} {} minecraft:{} replace\n"
+FILL_TEMPLATE = "fill {} {} {} {} {} {} minecraft:{}\n"
 
 
 def parse_args() -> Tuple[argparse.ArgumentParser, argparse.Namespace]:
@@ -191,31 +191,25 @@ class MCImage:
                 block_id, y = self.blocks[z + 1][x]
                 self._commands.append(
                     SETBLOCK_TEMPLATE.format(
-                        x=x - MAP_OFFSET,
-                        y=y + BASE_HEIGHT,
-                        z=z - MAP_OFFSET,
-                        block_id=block_id,
+                        x - MAP_OFFSET, y + BASE_HEIGHT, z - MAP_OFFSET, block_id,
                     )
                 )
                 self._commands.append(
                     FILL_TEMPLATE.format(
-                        x1=x - MAP_OFFSET,
-                        y1=y + BASE_HEIGHT + 1,
-                        z1=z - MAP_OFFSET,
-                        x2=x - MAP_OFFSET,
-                        y2=255,
-                        z2=z - MAP_OFFSET,
-                        block_id="air",
+                        x - MAP_OFFSET,
+                        y + BASE_HEIGHT + 1,
+                        z - MAP_OFFSET,
+                        x - MAP_OFFSET,
+                        255,
+                        z - MAP_OFFSET,
+                        "air",
                     )
                 )
 
         for x, y, z in self._water_blockers:
             self._commands.append(
                 SETBLOCK_TEMPLATE.format(
-                    x=x - MAP_OFFSET,
-                    y=y + BASE_HEIGHT,
-                    z=z - MAP_OFFSET,
-                    block_id="glass",
+                    x - MAP_OFFSET, y + BASE_HEIGHT, z - MAP_OFFSET, "glass",
                 )
             )
 
@@ -229,6 +223,9 @@ class MCImage:
 
         The function to draw the image is namespaced under ``namespace``
         """
+
+        def get_adjusted_coords(base_coords, coords_diff):
+            return (c + diff for c, diff in zip(base_coords, coords_diff))
 
         namespace = self._namespace_from_filename(self.filename)
 
@@ -255,13 +252,9 @@ class MCImage:
         with open(os.path.join(functions_dir, "setup.mcfunction"), "w") as f:
             f.write(
                 FILL_TEMPLATE.format(
-                    x1=COMMAND_BLOCK_POS[0],
-                    y1=COMMAND_BLOCK_POS[1],
-                    z1=COMMAND_BLOCK_POS[2],
-                    x2=COMMAND_BLOCK_POS[0] - 1,
-                    y2=COMMAND_BLOCK_POS[1] + 5,
-                    z2=COMMAND_BLOCK_POS[2],
-                    block_id="air",
+                    *COMMAND_BLOCK_POS,
+                    *get_adjusted_coords(COMMAND_BLOCK_POS, (-1, 5, 0)),
+                    "air",
                 )
             )
             for i in range(n + 1):
@@ -274,34 +267,34 @@ class MCImage:
                 )
                 f.write(
                     SETBLOCK_TEMPLATE.format(
-                        x=COMMAND_BLOCK_POS[0],
-                        y=COMMAND_BLOCK_POS[1] + i,
-                        z=COMMAND_BLOCK_POS[2],
-                        block_id=f"{block_id}{block_state}{block_entity_data}",
+                        *get_adjusted_coords(COMMAND_BLOCK_POS, (0, i, 0)),
+                        f"{block_id}{block_state}{block_entity_data}",
                     )
                 )
                 if not i:
                     f.write(
                         SETBLOCK_TEMPLATE.format(
-                            x=COMMAND_BLOCK_POS[0] - 1,
-                            y=COMMAND_BLOCK_POS[1],
-                            z=COMMAND_BLOCK_POS[2] + i,
-                            block_id="stone_button[face=wall, facing=west]",
+                            *get_adjusted_coords(COMMAND_BLOCK_POS, (-1, 0, i)),
+                            "stone_button[face=wall, facing=west]",
                         )
                     )
             f.write(
                 FILL_TEMPLATE.format(
-                    x1=COMMAND_BLOCK_POS[0] + VIEWING_PLATFORM_RADIUS,
-                    y1=COMMAND_BLOCK_POS[1] - 1,
-                    z1=COMMAND_BLOCK_POS[2] + VIEWING_PLATFORM_RADIUS,
-                    x2=COMMAND_BLOCK_POS[0] - VIEWING_PLATFORM_RADIUS,
-                    y2=COMMAND_BLOCK_POS[1] - 1,
-                    z2=COMMAND_BLOCK_POS[2] - VIEWING_PLATFORM_RADIUS,
-                    block_id="glass",
+                    *get_adjusted_coords(
+                        COMMAND_BLOCK_POS,
+                        (VIEWING_PLATFORM_RADIUS, -1, VIEWING_PLATFORM_RADIUS),
+                    ),
+                    *get_adjusted_coords(
+                        COMMAND_BLOCK_POS,
+                        (-VIEWING_PLATFORM_RADIUS, -1, -VIEWING_PLATFORM_RADIUS),
+                    ),
+                    "glass",
                 )
                 + (
                     "gamemode creative @s\n"
-                    f"tp @s {COMMAND_BLOCK_POS[0] - 3} {COMMAND_BLOCK_POS[1]} {COMMAND_BLOCK_POS[2]} -90 0\n"
+                    "tp @s {} {} {} -90 0\n".format(
+                        *get_adjusted_coords(COMMAND_BLOCK_POS, (-3, 0, 0))
+                    )
                 )
             )
 
