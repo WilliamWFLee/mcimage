@@ -122,17 +122,17 @@ class MCImage:
         """
         print("Blocking off any water blocks...")
         self._water_blockers = set()
-        for x in range(self._image_size):
-            for z in range(self._image_size):
+        for z in range(1, len(self.blocks)):
+            for x in range(len(self.blocks[z])):
                 block_id, y = self.blocks[z][x]
                 if block_id == "water":
                     for dx, dz in ((0, 1), (0, -1), (1, 0), (-1, 0)):
                         if (
-                            not 0 <= x + dx < self._image_size
-                            or not 0 <= z + dz < self._image_size
-                            or self.blocks[z + dz][x + dx][1] <= y
+                            (0 <= x + dx < len(self.blocks[z]))
+                            and (0 <= z + dz < len(self.blocks))
+                            and self.blocks[z + dz][x + dx][1] < y
                         ):
-                            self._water_blockers.add((x + dx, y, z + dz))
+                            self._water_blockers.add((x + dx, y, z + dz - 1))
 
     def _process_image(self):
         """
