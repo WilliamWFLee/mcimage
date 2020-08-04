@@ -189,6 +189,8 @@ class MCImage:
         for z in range(-1, self._image_size):
             for x in range(self._image_size):
                 block_id, y = self.blocks[z + 1][x]
+                if block_id == "oak_leaves":
+                    block_id += "[persistent=true]"
                 self._commands.append(
                     SETBLOCK_TEMPLATE.format(
                         x - MAP_OFFSET, y + BASE_HEIGHT, z - MAP_OFFSET, block_id,
