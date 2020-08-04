@@ -217,7 +217,7 @@ class MCImage:
 
     def _export_datapack(self):
         """
-        Exports a datapack which the function text
+        Exports a datapack with the function text
 
         The function is saved in a datapack under ``name``.
 
