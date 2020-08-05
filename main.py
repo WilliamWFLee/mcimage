@@ -186,6 +186,22 @@ class MCImage:
         print("Preparing commands... ", end="")
 
         self._commands = ["tell @p Placing blocks, please be patient...\n"]
+        for z in range(-1, self._image_size, 128):
+            for x in range(0, self._image_size, 128):
+                x2 = x + 128 if x + 128 < self._image_size else self._image_size - 1
+                z2 = z + 128 if z + 128 < self._image_size else self._image_size - 1
+                self._commands.extend(
+                    FILL_TEMPLATE.format(
+                        x - MAP_OFFSET,
+                        y,
+                        z - MAP_OFFSET,
+                        x2 - MAP_OFFSET,
+                        y,
+                        z2 - MAP_OFFSET,
+                        "air",
+                    )
+                    for y in range(BASE_HEIGHT, 256)
+                )
         for z in range(-1, self._image_size):
             for x in range(self._image_size):
                 block_id, y = self.blocks[z + 1][x]
@@ -194,17 +210,6 @@ class MCImage:
                 self._commands.append(
                     SETBLOCK_TEMPLATE.format(
                         x - MAP_OFFSET, y + BASE_HEIGHT, z - MAP_OFFSET, block_id,
-                    )
-                )
-                self._commands.append(
-                    FILL_TEMPLATE.format(
-                        x - MAP_OFFSET,
-                        y + BASE_HEIGHT + 1,
-                        z - MAP_OFFSET,
-                        x - MAP_OFFSET,
-                        255,
-                        z - MAP_OFFSET,
-                        "air",
                     )
                 )
 
