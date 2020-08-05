@@ -92,8 +92,8 @@ class ColorCache:
 
     _CACHE_FILENAME = os.path.join(os.path.dirname(__file__), "color.cache")
 
-    def __init__(self):
-        self._cache = {}
+    def __init__(self, cache_dict=None):
+        self.cache_dict = {} if cache_dict is None else cache_dict
         self._cache_hash = None
 
     @classmethod
@@ -109,7 +109,7 @@ class ColorCache:
         # Loads color cache, and updates to cache_dict
         if os.path.exists(self._CACHE_FILENAME):
             with open(self._CACHE_FILENAME, "rb") as f:
-                self._cache.update(pickle.load(f))
+                self.cache_dict.update(pickle.load(f))
                 self._cache_hash = self._get_file_hash()
 
     def open(self):
@@ -126,7 +126,7 @@ class ColorCache:
         if self._get_file_hash() != self._cache_hash:
             self._update_cache()
         with open(f"{self._CACHE_FILENAME}-journal", "wb") as f:
-            pickle.dump(self._cache, f)
+            pickle.dump(self.cache_dict, f)
             f.flush()
             os.fsync(f.fileno())
 
@@ -138,7 +138,7 @@ class ColorCache:
 
         Returns None is not found
         """
-        return self._cache[color] if color in self._cache else None
+        return self.cache_dict[color] if color in self.cache_dict else None
 
     def add(self, color: Color, block_id: str, height_diff: int, replace: bool = True):
         """
@@ -154,9 +154,22 @@ class ColorCache:
         if len(color) != 3:
             raise ValueError(f"Color must be of length 3, got {len(color)}")
 
-        if not replace and color in self._cache:
+        if not replace and color in self.cache_dict:
             raise ValueError("Mapping for color {color} already exists")
-        self._cache[color] = (block_id, height_diff)
+        self.cache_dict[color] = (block_id, height_diff)
+
+    def copy(self):
+        """
+        Returns a copy of the cache object
+        """
+        return type(self)(self.cache_dict)
+
+    def merge(self, *others):
+        """
+        Merges other cache objects with this cache object
+        """
+        for other in others:
+            self.cache_dict.update(other.cache_dict)
 
     def __enter__(self):
         self.open()
@@ -166,10 +179,10 @@ class ColorCache:
         self.save()
 
     def __iter__(self):
-        return iter(self._cache)
+        return iter(self.cache_dict)
 
     def __contains__(self, key):
-        return key in self._cache
+        return key in self.cache_dict
 
     def __setitem__(self, key, value):
         self.add(key, *value)
