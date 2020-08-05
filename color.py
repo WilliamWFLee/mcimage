@@ -118,9 +118,10 @@ class ColorCache:
         Updates and saves the cache to file
         """
         print("Saving color mappings, please wait...")
-        with open(f"{self._CACHE_FILENAME}", "rb") as f:
-            if self._get_file_hash(f) != self._cache_hash:
-                self._update_cache()
+        if os.path.exists(self._CACHE_FILENAME):
+            with open(self._CACHE_FILENAME, "rb") as f:
+                if self._get_file_hash(f) != self._cache_hash:
+                    self._update_cache()
         with open(f"{self._CACHE_FILENAME}-journal", "wb") as f:
             pickle.dump(self._cache, f)
             f.flush()
