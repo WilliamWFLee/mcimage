@@ -222,6 +222,11 @@ class ColorProcessor:
                     closest_block_id = block_id
                     height_diff = n - 1
                     closest_distance = distance
+                    if closest_distance == 0:
+                        break
+            else:
+                continue
+            break
 
         cache[color] = (closest_block_id, height_diff)
         return (closest_block_id, height_diff)
