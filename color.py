@@ -96,16 +96,21 @@ class ColorCache:
         self._cache = {}
         self._cache_hash = None
 
-    @staticmethod
-    def _get_file_hash(file):
-        return hashlib.md5(file.read()).hexdigest()
+    @classmethod
+    def _get_file_hash(cls):
+        if os.path.exists(cls._CACHE_FILENAME):
+            md5 = hashlib.md5()
+            with open(cls._CACHE_FILENAME, "rb") as f:
+                for line in f:
+                    md5.update(line)
+            return md5.hexdigest()
 
     def _update_cache(self):
         # Loads color cache, and updates to cache_dict
         if os.path.exists(self._CACHE_FILENAME):
             with open(self._CACHE_FILENAME, "rb") as f:
                 self._cache.update(pickle.load(f))
-                self._cache_hash = self._get_file_hash(f)
+                self._cache_hash = self._get_file_hash()
 
     def open(self):
         """
@@ -118,10 +123,8 @@ class ColorCache:
         Updates and saves the cache to file
         """
         print("Saving color mappings, please wait...")
-        if os.path.exists(self._CACHE_FILENAME):
-            with open(self._CACHE_FILENAME, "rb") as f:
-                if self._get_file_hash(f) != self._cache_hash:
-                    self._update_cache()
+        if self._get_file_hash() != self._cache_hash:
+            self._update_cache()
         with open(f"{self._CACHE_FILENAME}-journal", "wb") as f:
             pickle.dump(self._cache, f)
             f.flush()
