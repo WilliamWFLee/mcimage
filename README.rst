@@ -1,4 +1,4 @@
-mcimage
+MCImage
 ===============
 
 A tool written in Python for producing Minecraft function files for map pixel art.
