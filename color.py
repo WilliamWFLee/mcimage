@@ -95,6 +95,7 @@ class ColorCache:
     def __init__(self, cache_dict=None):
         self.cache_dict = {} if cache_dict is None else cache_dict
         self._cache_hash = None
+        self._changed = False
 
     @classmethod
     def _get_file_hash(cls):
@@ -116,12 +117,16 @@ class ColorCache:
         """
         Opens the color cache from file
         """
+        print("Loading color mappings from file...")
         self._update_cache()
 
     def save(self):
         """
         Updates and saves the cache to file
         """
+        if not self._changed:
+            print("Mappings were not changed, so no save required")
+            return
         print("Saving color mappings, please wait...")
         if self._get_file_hash() != self._cache_hash:
             self._update_cache()
@@ -157,6 +162,7 @@ class ColorCache:
         if not replace and color in self.cache_dict:
             raise ValueError("Mapping for color {color} already exists")
         self.cache_dict[color] = (block_id, height_diff)
+        self._changed = True
 
     def copy(self):
         """
@@ -170,6 +176,7 @@ class ColorCache:
         """
         for other in others:
             self.cache_dict.update(other.cache_dict)
+        self._changed = True
 
     def __enter__(self):
         self.open()
