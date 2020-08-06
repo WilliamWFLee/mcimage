@@ -231,6 +231,7 @@ class ColorCache:
             return
         print("Saving color mappings, please wait...")
         if self._get_file_hash() != self._cache_hash:
+            print("Cache file has changed since it was opened, updating...")
             self._update_cache()
         with open(f"{self._CACHE_FILENAME}-journal", "wb") as f:
             pickle.dump(self.cache_dict, f)
