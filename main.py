@@ -189,10 +189,18 @@ class MCImage:
         print("Preparing commands... ", end="")
 
         self._commands = ["tell @p Placing blocks, please be patient...\n"]
-        for z in range(-1, self._image_size, 128):
-            for x in range(0, self._image_size, 128):
-                x2 = x + 128 if x + 128 < self._image_size else self._image_size - 1
-                z2 = z + 128 if z + 128 < self._image_size else self._image_size - 1
+        for z in range(-1, self._image_size, MAP_SIZE):
+            for x in range(0, self._image_size, MAP_SIZE):
+                x2 = (
+                    x + MAP_SIZE
+                    if x + MAP_SIZE < self._image_size
+                    else self._image_size - 1
+                )
+                z2 = (
+                    z + MAP_SIZE
+                    if z + MAP_SIZE < self._image_size
+                    else self._image_size - 1
+                )
                 self._commands.extend(
                     FILL_TEMPLATE.format(
                         x - MAP_OFFSET,
