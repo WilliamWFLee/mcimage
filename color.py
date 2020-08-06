@@ -316,7 +316,7 @@ class ColorProcessor:
         of the squares of each color component
         """
 
-        return sum((v2 - v1) ** 2 for v1, v2 in zip(target_color, compare_color))
+        return sum(abs(v2 - v1) for v1, v2 in zip(target_color, compare_color))
 
     @classmethod
     def get_block(cls, color: Color, cache: ColorCache) -> Tuple[str, int]:
