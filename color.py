@@ -321,16 +321,15 @@ class ColorProcessor:
     def get_block(cls, color: Color, cache: ColorCache) -> Tuple[str, int]:
         if color in cache:
             return cache[color]
-        closest_block_id = None
-        height_diff = None
+        closest_block = None
         closest_distance = None
         for c, block in COLORS.items():
             distance = cls.get_distance(color, c)
-            if closest_block_id is None or distance < closest_distance:
-                closest_block_id, height_diff = block
+            if closest_block is None or distance < closest_distance:
+                closest_block = block
                 closest_distance = distance
                 if closest_distance == 0:
                     break
 
-        cache[color] = (closest_block_id, height_diff)
-        return (closest_block_id, height_diff)
+        cache[color] = closest_block
+        return closest_block
