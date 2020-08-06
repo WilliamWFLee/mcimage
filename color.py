@@ -209,7 +209,7 @@ class ColorProcessor:
 
         Both colors are a tuple of three integers, each a component of RGB, 0 to 255.
 
-        Their distance is calculated as the square root of the sum of the differences
+        Their distance is calculated as the sum of the differences
         of the squares of each color component
         """
 
