@@ -2,6 +2,9 @@
 # -*- coding: utf-8 -*-
 """
 mcimage.color
+
+MIT License
+
 Copyright (c) 2020 William Lee
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
