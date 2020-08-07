@@ -161,7 +161,7 @@ class MCImage:
             box=(x, y, x + square_width, y + square_width) if not_square else None,
             reducing_gap=3.0,
         )
-        self.pixels = np.array(self.im)
+        self.pixels = np.array(self.im).tolist()
 
     def _determine_blocks(self):
         # Process pixels into blocks and coordinates
