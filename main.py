@@ -42,11 +42,12 @@ MAP_OFFSET = 64
 BASE_HEIGHT = 1
 HEIGHT_LIMIT = 256
 COMMANDS_PER_FUNCTION = 65536
-COMMAND_BLOCK_POS = (-75, 80, -64)
+COMMAND_BLOCK_POS = (-11, 80, 0)
 VIEWING_PLATFORM_RADIUS = 5
 
 SETBLOCK_TEMPLATE = "setblock {} {} {} minecraft:{} replace\n"
 FILL_TEMPLATE = "fill {} {} {} {} {} {} minecraft:{}\n"
+TP_TEMPLATE = "tp {} {} {} {} {} {}\n"
 
 
 def parse_args() -> Tuple[argparse.ArgumentParser, argparse.Namespace]:
@@ -164,6 +165,37 @@ class MCImage:
         )
         self.pixels = np.array(self.im).tolist()
 
+    @staticmethod
+    def _get_fill_command(x1, y1, z1, x2, y2, z2, block_id):
+        """
+        Returns a fill command with x and z coordinates adjusted for map offset
+        """
+        return FILL_TEMPLATE.format(
+            x1 - MAP_OFFSET,
+            y1,
+            z1 - MAP_OFFSET,
+            x2 - MAP_OFFSET,
+            y2,
+            z2 - MAP_OFFSET,
+            block_id,
+        )
+
+    @staticmethod
+    def _get_setblock_command(x, y, z, block_id):
+        """
+        Returns a setblock command with x and z coordinates adjusted for map offset
+        """
+        return SETBLOCK_TEMPLATE.format(x - MAP_OFFSET, y, z - MAP_OFFSET, block_id)
+
+    @staticmethod
+    def _get_tp_command(target, x, y, z, h_rot="", v_rot=""):
+        """
+        Returns a tp command with x and z coordinates adjusted for map offset
+        """
+        return TP_TEMPLATE.format(
+            target, x - MAP_OFFSET, y, z - MAP_OFFSET, h_rot, v_rot
+        ).strip()
+
     def _determine_blocks(self):
         # Process pixels into blocks and coordinates
         self.blocks = [[("stone", -1) for x in range(self._image_size)]]
@@ -203,15 +235,7 @@ class MCImage:
                     else self._image_size - 1
                 )
                 self._commands.extend(
-                    FILL_TEMPLATE.format(
-                        x - MAP_OFFSET,
-                        y,
-                        z - MAP_OFFSET,
-                        x2 - MAP_OFFSET,
-                        y,
-                        z2 - MAP_OFFSET,
-                        "air",
-                    )
+                    self._get_fill_command(x, y, z, x2, y, z2, "air")
                     for y in range(BASE_HEIGHT, HEIGHT_LIMIT)
                 )
         for z in range(-1, self._image_size):
@@ -220,9 +244,7 @@ class MCImage:
                 if block_id == "oak_leaves":
                     block_id += "[persistent=true]"
                 self._commands.append(
-                    SETBLOCK_TEMPLATE.format(
-                        x - MAP_OFFSET, y + BASE_HEIGHT, z - MAP_OFFSET, block_id,
-                    )
+                    self._get_setblock_command(x, y + BASE_HEIGHT, z, block_id,)
                 )
 
         for x, y, z in self._water_blockers:
@@ -270,7 +292,7 @@ class MCImage:
                 f.write("".join(commands))
         with open(os.path.join(functions_dir, "setup.mcfunction"), "w") as f:
             f.write(
-                FILL_TEMPLATE.format(
+                self._get_fill_command(
                     *COMMAND_BLOCK_POS,
                     *get_adjusted_coords(COMMAND_BLOCK_POS, (-1, 5, 0)),
                     "air",
@@ -285,20 +307,20 @@ class MCImage:
                     + "}"
                 )
                 f.write(
-                    SETBLOCK_TEMPLATE.format(
+                    self._get_setblock_command(
                         *get_adjusted_coords(COMMAND_BLOCK_POS, (0, i, 0)),
                         f"{block_id}{block_state}{block_entity_data}",
                     )
                 )
                 if not i:
                     f.write(
-                        SETBLOCK_TEMPLATE.format(
+                        self._get_setblock_command(
                             *get_adjusted_coords(COMMAND_BLOCK_POS, (-1, 0, i)),
                             "stone_button[face=wall, facing=west]",
                         )
                     )
             f.write(
-                FILL_TEMPLATE.format(
+                self._get_fill_command(
                     *get_adjusted_coords(
                         COMMAND_BLOCK_POS,
                         (VIEWING_PLATFORM_RADIUS, -1, VIEWING_PLATFORM_RADIUS),
@@ -309,11 +331,9 @@ class MCImage:
                     ),
                     "glass",
                 )
-                + (
-                    "gamemode creative @s\n"
-                    "tp @s {} {} {} -90 0\n".format(
-                        *get_adjusted_coords(COMMAND_BLOCK_POS, (-3, 0, 0))
-                    )
+                + "gamemode creative @s\n"
+                + self._get_tp_command(
+                    "@s", *get_adjusted_coords(COMMAND_BLOCK_POS, (-3, 0, 0)), -90, 0,
                 )
             )
 
