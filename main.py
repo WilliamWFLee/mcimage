@@ -39,6 +39,7 @@ from color import ColorProcessor, ColorCache
 MAP_SIZE = 128
 MAP_OFFSET = 64
 BASE_HEIGHT = 1
+HEIGHT_LIMIT = 256
 COMMANDS_PER_FUNCTION = 65536
 COMMAND_BLOCK_POS = (-75, 80, -64)
 VIEWING_PLATFORM_RADIUS = 5
@@ -211,7 +212,7 @@ class MCImage:
                         z2 - MAP_OFFSET,
                         "air",
                     )
-                    for y in range(BASE_HEIGHT, 256)
+                    for y in range(BASE_HEIGHT, HEIGHT_LIMIT)
                 )
         for z in range(-1, self._image_size):
             for x in range(self._image_size):
