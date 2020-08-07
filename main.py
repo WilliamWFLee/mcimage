@@ -330,7 +330,7 @@ class MCImage:
         """
         namespace = re.sub(
             r"[^\w]+", "_", os.path.basename(filename).rsplit(".", maxsplit=1)[0]
-        )
+        ).lower()
 
         return namespace
 
