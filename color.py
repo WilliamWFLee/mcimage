@@ -323,6 +323,9 @@ class ColorProcessor:
 
     @classmethod
     def get_block(cls, color: Color, cache: ColorCache) -> Tuple[str, int]:
+        """
+        Gets the closest block to the given colour
+        """
         if color in cache:
             return cache[color]
         closest_block = None
