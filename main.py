@@ -198,13 +198,15 @@ class MCImage:
 
     def _determine_blocks(self):
         # Process pixels into blocks and coordinates
+
+        cp = ColorProcessor()
         self.blocks = [[("stone", -1) for x in range(self._image_size)]]
         for z in range(self._image_size):
             print(f"Determining blocks... row {z+1}/{self._image_size}", end="\r")
             row = []
             for x in range(self._image_size):
                 pixel_color = tuple(self.pixels[z][x])
-                block_id, height_diff = ColorProcessor.get_block(pixel_color)
+                block_id, height_diff = cp.get_block(pixel_color)
                 block = (block_id, self.blocks[z][x][1] + height_diff)
                 row += [block]
             self.blocks += [row]

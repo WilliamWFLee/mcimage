@@ -188,6 +188,10 @@ COLORS = {
 
 
 class ColorProcessor:
+
+    def __init__(self):
+        self._cache = {}
+
     @staticmethod
     def get_distance(target_color: Color, compare_color: Color) -> float:
         """
@@ -201,19 +205,21 @@ class ColorProcessor:
 
         return sum(abs(v2 - v1) ** 2 for v1, v2 in zip(target_color, compare_color))
 
-    @classmethod
-    def get_block(cls, color: Color) -> Tuple[str, int]:
+    def get_block(self, color: Color) -> Tuple[str, int]:
         """
         Gets the closest block to the given colour
         """
+        if color in self._cache:
+            return self._cache[color]
         closest_block = None
         closest_distance = None
         for c, block in COLORS.items():
-            distance = cls.get_distance(color, c)
+            distance = self.get_distance(color, c)
             if closest_block is None or distance < closest_distance:
                 closest_block = block
                 closest_distance = distance
                 if closest_distance == 0:
                     break
 
+        self._cache[color] = closest_block
         return closest_block
