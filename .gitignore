@@ -141,7 +141,3 @@ dmypy.json
 
 # Output datapacks
 datapacks/
-
-# Color cache
-color.cache
-color.cache-journal

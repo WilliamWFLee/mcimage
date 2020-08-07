@@ -26,9 +26,6 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE
 """
 
-import hashlib
-import os
-import pickle
 from typing import Sequence, Tuple
 
 Color = Sequence[int]
@@ -190,123 +187,6 @@ COLORS = {
 }
 
 
-class ColorCache:
-    """
-    A class for mapping RGB color tuples to most appropriate blocks and elevations
-    """
-
-    _CACHE_FILENAME = os.path.join(os.path.dirname(__file__), "color.cache")
-
-    def __init__(self, cache_dict=None):
-        self.cache_dict = {} if cache_dict is None else cache_dict
-        self._cache_hash = None
-        self._changed = False
-
-    @classmethod
-    def _get_file_hash(cls):
-        if os.path.exists(cls._CACHE_FILENAME):
-            md5 = hashlib.md5()
-            with open(cls._CACHE_FILENAME, "rb") as f:
-                for line in f:
-                    md5.update(line)
-            return md5.hexdigest()
-
-    def _update_cache(self):
-        # Loads color cache, and updates to cache_dict
-        if os.path.exists(self._CACHE_FILENAME):
-            with open(self._CACHE_FILENAME, "rb") as f:
-                self.cache_dict.update(pickle.load(f))
-                self._cache_hash = self._get_file_hash()
-
-    def open(self):
-        """
-        Opens the color cache from file
-        """
-        print("Loading color mappings from file...")
-        self._update_cache()
-
-    def save(self):
-        """
-        Updates and saves the cache to file
-        """
-        if not self._changed:
-            print("Mappings were not changed, so no save required")
-            return
-        print("Saving color mappings, please wait...")
-        if self._get_file_hash() != self._cache_hash:
-            print("Cache file has changed since it was opened, updating...")
-            self._update_cache()
-        with open(f"{self._CACHE_FILENAME}-journal", "wb") as f:
-            pickle.dump(self.cache_dict, f)
-            f.flush()
-            os.fsync(f.fileno())
-
-        os.rename(f"{self._CACHE_FILENAME}-journal", self._CACHE_FILENAME)
-
-    def find(self, color: Color) -> Tuple[str, int]:
-        """
-        Finds corresponding block/elevation difference in cache
-
-        Returns None is not found
-        """
-        return self.cache_dict[color] if color in self.cache_dict else None
-
-    def add(self, color: Color, block_id: str, height_diff: int, replace: bool = True):
-        """
-        Adds a new color to the cache
-
-        If replace is True, then the given color in cache is replaced if it exists,
-        else a ValueError is raised.
-        """
-        if not isinstance(color, tuple):
-            raise TypeError(
-                f"Color must be of type 'tuple', got {type(color).__name__!r}"
-            )
-        if len(color) != 3:
-            raise ValueError(f"Color must be of length 3, got {len(color)}")
-
-        if not replace and color in self.cache_dict:
-            raise ValueError("Mapping for color {color} already exists")
-        self.cache_dict[color] = (block_id, height_diff)
-        self._changed = True
-
-    def copy(self):
-        """
-        Returns a copy of the cache object
-        """
-        return type(self)(self.cache_dict)
-
-    def merge(self, *others):
-        """
-        Merges other cache objects with this cache object
-        """
-        for other in others:
-            self.cache_dict.update(other.cache_dict)
-        self._changed = True
-
-    def __enter__(self):
-        self.open()
-        return self
-
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        self.save()
-
-    def __iter__(self):
-        return iter(self.cache_dict)
-
-    def __contains__(self, key):
-        return key in self.cache_dict
-
-    def __setitem__(self, key, value):
-        self.add(key, *value)
-
-    def __getitem__(self, key):
-        color = self.find(key)
-        if color is None:
-            raise KeyError(color)
-        return color
-
-
 class ColorProcessor:
     @staticmethod
     def get_distance(target_color: Color, compare_color: Color) -> float:
@@ -322,12 +202,10 @@ class ColorProcessor:
         return sum(abs(v2 - v1) for v1, v2 in zip(target_color, compare_color))
 
     @classmethod
-    def get_block(cls, color: Color, cache: ColorCache) -> Tuple[str, int]:
+    def get_block(cls, color: Color) -> Tuple[str, int]:
         """
         Gets the closest block to the given colour
         """
-        if color in cache:
-            return cache[color]
         closest_block = None
         closest_distance = None
         for c, block in COLORS.items():
@@ -338,5 +216,4 @@ class ColorProcessor:
                 if closest_distance == 0:
                     break
 
-        cache[color] = closest_block
         return closest_block

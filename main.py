@@ -29,12 +29,13 @@ SOFTWARE
 import argparse
 import json
 import os
+import re
 from typing import Tuple
 
 import numpy as np
 from PIL import Image, UnidentifiedImageError
 
-from color import ColorProcessor, ColorCache
+from color import ColorProcessor
 
 MAP_SIZE = 128
 MAP_OFFSET = 64
@@ -166,17 +167,16 @@ class MCImage:
     def _determine_blocks(self):
         # Process pixels into blocks and coordinates
         self.blocks = [[("stone", -1) for x in range(self._image_size)]]
-        with ColorCache() as cache:
-            for z in range(self._image_size):
-                print(f"Determining blocks... row {z+1}/{self._image_size}", end="\r")
-                row = []
-                for x in range(self._image_size):
-                    pixel_color = tuple(self.pixels[z][x])
-                    block_id, height_diff = ColorProcessor.get_block(pixel_color, cache)
-                    block = (block_id, self.blocks[z][x][1] + height_diff)
-                    row += [block]
-                self.blocks += [row]
-            print()
+        for z in range(self._image_size):
+            print(f"Determining blocks... row {z+1}/{self._image_size}", end="\r")
+            row = []
+            for x in range(self._image_size):
+                pixel_color = tuple(self.pixels[z][x])
+                block_id, height_diff = ColorProcessor.get_block(pixel_color)
+                block = (block_id, self.blocks[z][x][1] + height_diff)
+                row += [block]
+            self.blocks += [row]
+        print()
 
     def _process_pixels(self):
         self._determine_blocks()
