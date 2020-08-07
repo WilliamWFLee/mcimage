@@ -328,9 +328,8 @@ class MCImage:
         Namespace is the filename, stripped of extension, lowercased
         and all non-alphanumeric characters replaced with underscores
         """
-        namespace = "".join(
-            c.lower() if c.isalnum() else "_"
-            for c in os.path.basename(filename).rsplit(".", maxsplit=1)[0]
+        namespace = re.sub(
+            r"[^\w]+", "_", os.path.basename(filename).rsplit(".", maxsplit=1)[0]
         )
 
         return namespace
